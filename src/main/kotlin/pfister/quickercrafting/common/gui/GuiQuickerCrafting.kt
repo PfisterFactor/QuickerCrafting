@@ -1,0 +1,318 @@
+package pfister.quickercrafting.common.gui
+
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.inventory.GuiContainer
+import net.minecraft.client.renderer.GlStateManager
+import net.minecraft.client.renderer.RenderHelper
+import net.minecraft.client.resources.I18n
+import net.minecraft.client.util.RecipeItemHelper
+import net.minecraft.entity.player.InventoryPlayer
+import net.minecraft.inventory.ClickType
+import net.minecraft.inventory.Slot
+import net.minecraft.item.crafting.IRecipe
+import net.minecraft.util.ResourceLocation
+import net.minecraft.util.math.MathHelper
+import net.minecraftforge.client.event.RenderTooltipEvent
+import net.minecraftforge.fml.client.config.GuiUtils
+import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+import net.minecraftforge.fml.relauncher.Side
+import org.lwjgl.input.Mouse
+import pfister.quickercrafting.MOD_ID
+import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
+import pfister.quickercrafting.client.gui.ClientSlot
+import pfister.quickercrafting.client.gui.GuiScrollBar
+import pfister.quickercrafting.client.gui.SlotState
+import pfister.quickercrafting.common.network.MessageCraftItem
+import pfister.quickercrafting.common.network.PacketHandler
+import pfister.quickercrafting.common.util.CraftHandler
+
+// Companion object for GuiQuickerCrafting
+// The name is slightly different because forge throws a fit if we try to register an object as an event handler with the same name as a non-static class
+@Mod.EventBusSubscriber(Side.CLIENT)
+class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContainerQuickerCrafting(playerInv)) {
+    companion object {
+        val TEXTURE: ResourceLocation = ResourceLocation(
+                MOD_ID, "textures/gui/quickercrafting_new.png")
+
+        @JvmStatic
+        @SubscribeEvent
+        fun onToolTipRender(event: RenderTooltipEvent.PostText) {
+            if (Minecraft.getMinecraft().currentScreen !is GuiQuickerCrafting)
+                return
+
+            val gui = Minecraft.getMinecraft().currentScreen as GuiQuickerCrafting
+
+            if (gui.hoveredRecipeAndItemMap == null) return
+            val recipe = gui.hoveredRecipeAndItemMap!!.first
+            val itemMap = gui.hoveredRecipeAndItemMap!!.second
+
+            val packedItemsAndCounts =
+                    itemMap.entries.fold(mapOf<Int,Int>()) { acc, entry ->
+                        val stackPacked = RecipeItemHelper.pack(Minecraft.getMinecraft().player.openContainer.inventoryItemStacks[entry.key])
+                        acc.plus(Pair(stackPacked, acc.getOrDefault(stackPacked, 0) + entry.value))
+                    }
+
+            val tooltipX = event.x + event.width + 7
+            val tooltipY = event.y
+
+            val tooltipTextWidth =
+                    if (packedItemsAndCounts.size >= 3) 54 else packedItemsAndCounts.size * 18
+            val tooltipHeight = (1 + (packedItemsAndCounts.size - 1) / 3) * 18
+            val backgroundColor = 0xF0100010.toInt()
+            val borderColorStart = 0x505000FF.toInt()
+
+            val borderColorEnd = (borderColorStart and 0xFEFEFE) shr 1 or borderColorStart and 0xFF000000.toInt()
+
+            GuiUtils.drawGradientRect(300,
+                    tooltipX - 3,
+                    tooltipY - 4,
+                    tooltipX + tooltipTextWidth + 3,
+                    tooltipY - 3,
+                    backgroundColor,
+                    backgroundColor)
+            GuiUtils.drawGradientRect(300,
+                    tooltipX - 3,
+                    tooltipY + tooltipHeight + 3,
+                    tooltipX + tooltipTextWidth + 3,
+                    tooltipY + tooltipHeight + 4,
+                    backgroundColor,
+                    backgroundColor)
+            GuiUtils.drawGradientRect(300,
+                    tooltipX - 3,
+                    tooltipY - 3,
+                    tooltipX + tooltipTextWidth + 3,
+                    tooltipY + tooltipHeight + 3,
+                    backgroundColor,
+                    backgroundColor)
+            GuiUtils.drawGradientRect(300,
+                    tooltipX - 4,
+                    tooltipY - 3,
+                    tooltipX - 3,
+                    tooltipY + tooltipHeight + 3,
+                    backgroundColor,
+                    backgroundColor)
+            GuiUtils.drawGradientRect(300,
+                    tooltipX + tooltipTextWidth + 3,
+                    tooltipY - 3,
+                    tooltipX + tooltipTextWidth + 4,
+                    tooltipY + tooltipHeight + 3,
+                    backgroundColor,
+                    backgroundColor)
+            GuiUtils.drawGradientRect(300,
+                    tooltipX - 3,
+                    tooltipY - 3 + 1,
+                    tooltipX - 3 + 1,
+                    tooltipY + tooltipHeight + 3 - 1,
+                    borderColorStart,
+                    borderColorEnd)
+            GuiUtils.drawGradientRect(300,
+                    tooltipX + tooltipTextWidth + 2,
+                    tooltipY - 3 + 1,
+                    tooltipX + tooltipTextWidth + 3,
+                    tooltipY + tooltipHeight + 3 - 1,
+                    borderColorStart,
+                    borderColorEnd)
+            GuiUtils.drawGradientRect(300,
+                    tooltipX - 3,
+                    tooltipY - 3,
+                    tooltipX + tooltipTextWidth + 3,
+                    tooltipY - 3 + 1,
+                    borderColorStart,
+                    borderColorStart)
+            GuiUtils.drawGradientRect(300,
+                    tooltipX - 3,
+                    tooltipY + tooltipHeight + 2,
+                    tooltipX + tooltipTextWidth + 3,
+                    tooltipY + tooltipHeight + 3,
+                    borderColorEnd,
+                    borderColorEnd)
+
+            var x = 0
+            var y = 0
+            packedItemsAndCounts.entries.forEach {pair ->
+                GlStateManager.pushMatrix()
+                RenderHelper.disableStandardItemLighting()
+                RenderHelper.enableGUIStandardItemLighting()
+                GlStateManager.translate(0.0, 0.0, 301.0)
+                val stack = RecipeItemHelper.unpack(pair.key)
+                gui.drawItemStack(stack, tooltipX + x * 18, tooltipY + y * 18, "" + pair.value)
+                GlStateManager.popMatrix()
+                y = if (x == 2) y + 1 else y
+                x = (x + 1) % 3
+            }
+        }
+    }
+    lateinit var Scrollbar: GuiScrollBar
+
+
+    // If the mouse was down the last frame
+    private var wasClicking = false
+
+    var hoveredRecipeAndItemMap: Pair<IRecipe, Map<Int, Int>>? = null
+
+    init {
+        // Set size of window
+        this.xSize = 207
+        this.ySize = 172
+    }
+
+    override fun initGui() {
+        super.initGui()
+        Scrollbar = GuiScrollBar(guiLeft, guiTop)
+    }
+
+    override fun updateScreen() {
+        super.updateScreen()
+
+        inventorySlots.detectAndSendChanges()
+    }
+
+    override fun handleMouseClick(slotIn: Slot?, slotId: Int, mouseButton: Int, type: ClickType) {
+        if (slotId < (inventorySlots as ClientContainerQuickerCrafting).ClientSlotsStart)
+            super.handleMouseClick(slotIn, slotId, mouseButton, type)
+        else if (hoveredRecipeAndItemMap != null && mouseButton == 0) {
+            if (CraftHandler.tryCraftRecipe(this.inventorySlots as ContainerQuickerCrafting, hoveredRecipeAndItemMap!!.first))
+                PacketHandler.INSTANCE.sendToServer(MessageCraftItem(hoveredRecipeAndItemMap!!.first))
+        }
+    }
+
+    override fun handleMouseInput() {
+        super.handleMouseInput()
+        var i = Mouse.getDWheel()
+        if (i != 0 && Scrollbar.isEnabled) {
+            val rows = ((this.inventorySlots
+                    as ClientContainerQuickerCrafting)
+                    .craftableRecipes
+                    .size + 8) / 9
+            if (i > 0) i = 1
+            else if (i < 0) i = -1
+            Scrollbar.isScrolling = true
+            Scrollbar.currentScroll = Scrollbar.currentScroll - i / rows.toFloat()
+            Scrollbar.currentScroll = MathHelper.clamp(Scrollbar.currentScroll, 0.0, 1.0)
+        }
+    }
+
+    // Draws the background to the GUI
+    override fun drawGuiContainerBackgroundLayer(partialTicks: Float, mouseX: Int, mouseY: Int) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
+        // Bind the GUI texture
+        this.mc.textureManager.bindTexture(TEXTURE)
+        this.drawTexturedModalRect(this.guiLeft,
+                this.guiTop,
+                0,
+                0,
+                this.xSize,
+                this.ySize)
+        if (hoveredRecipeAndItemMap != null) {
+            GlStateManager.pushMatrix()
+            // Draws red transparent rectangles behind items that will be used to craft the recipe
+            hoveredRecipeAndItemMap!!.second.forEach {(key,value) ->
+                val row = key / 9
+                val column = key % 9
+                val xToDrawAt = guiLeft + 8 + column * 18
+                val yToDrawAt = if (row < 3) guiTop + 90 + row * 18 else guiTop + 148
+
+                GuiUtils.drawGradientRect(0,
+                        xToDrawAt,
+                        yToDrawAt,
+                        xToDrawAt + 16,
+                        yToDrawAt + 16, 0x9900CC00.toInt(), 0xFF00CC00.toInt())
+
+            }
+            GlStateManager.popMatrix()
+        }
+
+    }
+
+    // Draws the buttons and stuff on top of the background
+    override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
+        var hoveredSlotIndex = if (slotUnderMouse != null) slotUnderMouse!!.slotNumber else -1
+        if (Scrollbar.isScrolling) hoveredSlotIndex = -1
+        (inventorySlots as ClientContainerQuickerCrafting).updateDisplay(Scrollbar.currentScroll, hoveredSlotIndex)
+        Scrollbar.isEnabled = (inventorySlots as ClientContainerQuickerCrafting).shouldDisplayScrollbar
+        drawDefaultBackground()
+        val isClicking: Boolean = Mouse.isButtonDown(0)
+        if (!wasClicking && isClicking && Scrollbar.isInScrollBarBounds(mouseX, mouseY))
+            Scrollbar.isScrolling = true
+
+        if (!isClicking)
+            Scrollbar.isScrolling = false
+
+        wasClicking = isClicking
+
+        if (Scrollbar.isScrolling) {
+            Scrollbar.currentScroll = (mouseY - (guiTop + GuiScrollBar.GUI_POS_Y)) / GuiScrollBar.SCROLLBAR_HEIGHT.toDouble()
+            Scrollbar.currentScroll = MathHelper.clamp(Scrollbar.currentScroll, 0.0, 1.0)
+        }
+        super.drawScreen(mouseX, mouseY, partialTicks)
+
+        if (slotUnderMouse != null && slotUnderMouse
+                        is ClientSlot) {
+            val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipe
+            val itemMap: Map<Int,Int>? = if (recipe != null) (inventorySlots as ClientContainerQuickerCrafting).RecipeCalculator.doCraft(recipe) else null
+            hoveredRecipeAndItemMap = if (itemMap != null) Pair(recipe!!,itemMap) else null
+        } else
+            hoveredRecipeAndItemMap = null
+
+        renderHoveredToolTip(mouseX, mouseY)
+    }
+
+    override fun renderHoveredToolTip(mouseX: Int, mouseY: Int) {
+        super.renderHoveredToolTip(mouseX, mouseY)
+        if (hoveredRecipeAndItemMap != null)
+            renderToolTip(hoveredRecipeAndItemMap!!.first.recipeOutput, mouseX, mouseY)
+    }
+
+    override fun drawGuiContainerForegroundLayer(mouseX: Int, mouseY: Int) {
+        this.fontRenderer.drawString(I18n.format("container.crafting"),
+                8,
+                6,
+                4210752)
+        this.fontRenderer.drawString(I18n.format("container.inventory"),
+                8,
+                78,
+                4210752)
+        GlStateManager.colorMask(true, true, true, false)
+        GlStateManager.pushMatrix()
+        GlStateManager.disableLighting()
+        GlStateManager.disableDepth()
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
+        this.mc.textureManager.bindTexture(TEXTURE)
+        if (Scrollbar.isEnabled)
+            this.drawTexturedModalRect(
+                    GuiScrollBar.GUI_POS_X,
+                    MathHelper.clamp(GuiScrollBar.GUI_POS_Y - GuiScrollBar.TEX_HEIGHT / 2 + (GuiScrollBar.SCROLLBAR_HEIGHT * Scrollbar.currentScroll).toInt(), GuiScrollBar.GUI_POS_Y, GuiScrollBar.GUI_POS_Y + GuiScrollBar.SCROLLBAR_HEIGHT - GuiScrollBar.TEX_HEIGHT - 1
+                    ),
+                    GuiScrollBar.TEX_OFFSET_X,
+                    GuiScrollBar.TEX_OFFSET_Y,
+                    GuiScrollBar.TEX_WIDTH,
+                    GuiScrollBar.TEX_HEIGHT
+            )
+        else {
+            this.drawTexturedModalRect(
+                    GuiScrollBar.GUI_POS_X,
+                    GuiScrollBar.GUI_POS_Y,
+                    GuiScrollBar.TEX_OFFSET_X + GuiScrollBar.TEX_WIDTH,
+                    GuiScrollBar.TEX_OFFSET_Y,
+                    GuiScrollBar.TEX_WIDTH,
+                    GuiScrollBar.TEX_HEIGHT
+            )
+            Scrollbar.currentScroll = 0.0
+        }
+        GlStateManager.popMatrix()
+
+        inventorySlots.inventorySlots
+                .filter { s -> s is ClientSlot && (s.State == SlotState.DISABLED || s.State == SlotState.EMPTY) }
+                .forEach { slot -> drawGradientRect(slot.xPos, slot.yPos, slot.xPos + 16, slot.yPos + 16, 0x55000000, 0x55000000) }
+
+    }
+
+    override fun hasClickedOutside(mouseX: Int, mouseY: Int, left: Int, top: Int): Boolean {
+        return if (mouseY > top + 107) {
+            mouseX < left || mouseX > left + 175 || mouseY < top || mouseY > top + ySize
+        } else
+            super.hasClickedOutside(mouseX, mouseY, left, top)
+    }
+
+}

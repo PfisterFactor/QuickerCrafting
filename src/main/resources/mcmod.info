@@ -1,0 +1,16 @@
+[
+{
+  "modid": "quickercrafting",
+  "name": "Quicker Crafting",
+  "description": "Adds a queued crafting mechanic ala Factorio to reduce tedium in crafting.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["MiddaPhofidda"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
