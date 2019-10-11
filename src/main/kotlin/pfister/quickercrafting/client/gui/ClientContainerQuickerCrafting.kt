@@ -139,4 +139,5 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         list.addAll(super.getInventory().take(ClientSlotsStart))
         return list
     }
+
 }

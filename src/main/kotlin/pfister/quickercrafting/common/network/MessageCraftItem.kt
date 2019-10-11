@@ -12,21 +12,23 @@ import pfister.quickercrafting.LOG
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.util.CraftHandler
 
-class MessageCraftItem(var Recipe:IRecipe?) : IMessage {
+class MessageCraftItem(var Recipe: IRecipe?, var Shift: Boolean = false) : IMessage {
     @Suppress("unused")
-    constructor(): this(null)
+    constructor() : this(null, false)
     var recipeString: String = if (Recipe != null) Recipe!!.registryName.toString() else ""
 
     override fun toBytes(buf: ByteBuf?) {
-        PacketBuffer(buf!!).writeString(recipeString)
+        PacketBuffer(buf!!).writeBoolean(Shift)
+        PacketBuffer(buf).writeString(recipeString)
     }
 
     override fun fromBytes(buf: ByteBuf?) {
-        recipeString = PacketBuffer(buf!!).readString(50)
-        try {
-            Recipe = ForgeRegistries.RECIPES.getValue(ResourceLocation(recipeString))
+        Shift = PacketBuffer(buf!!).readBoolean()
+        recipeString = PacketBuffer(buf).readString(50)
+        Recipe = try {
+            ForgeRegistries.RECIPES.getValue(ResourceLocation(recipeString))
         } catch (e: Exception) {
-            Recipe = null
+            null
         }
     }
 
@@ -47,7 +49,7 @@ class MessageCraftItemHandler : IMessageHandler<MessageCraftItem, IMessage> {
         }
 
         val container = player.openContainer as ContainerQuickerCrafting
-        CraftHandler.tryCraftRecipe(container, message.Recipe!!)
+        CraftHandler.tryCraftRecipe(container, message.Recipe!!, message.Shift)
         return null
     }
 }

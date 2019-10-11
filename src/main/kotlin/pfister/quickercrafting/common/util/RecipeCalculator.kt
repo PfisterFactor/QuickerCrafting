@@ -11,7 +11,7 @@ import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     companion object {
         val SortedRecipes: List<IRecipe> = ForgeRegistries.RECIPES.valuesCollection
-                .filterNot { it.isDynamic }
+                .filterNot { it.isDynamic || it.ingredients.size == 0 }
                 .sortedWith(Comparator<IRecipe> { o1, o2 ->
                     val itemX = o1.recipeOutput.item
                     val itemY = o2.recipeOutput.item
@@ -24,7 +24,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
                     else if (yIsBlock && !xIsBlock) return@Comparator 1
                     else if (xIsBlock && yIsBlock) {
                         // Special check for doors
-                        if (itemX is ItemDoor && !(itemY is ItemDoor)) return@Comparator 1
+                        if (itemX is ItemDoor && itemY !is ItemDoor) return@Comparator 1
                         else if (!(itemX is ItemDoor) && itemY is ItemDoor) return@Comparator -1
                         else if (itemX is ItemDoor && itemY is ItemDoor) return@Comparator 0
 

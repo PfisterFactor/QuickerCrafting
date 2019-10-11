@@ -7,13 +7,13 @@ import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 // Handles the functionality for crafting something
 object CraftHandler {
     // Attempts to craft a recipe given the items within the container
-    fun tryCraftRecipe(container: ContainerQuickerCrafting, recipe: IRecipe): Boolean {
+    fun tryCraftRecipe(container: ContainerQuickerCrafting, recipe: IRecipe, shift: Boolean = false): Boolean {
         val recipeCalculator = RecipeCalculator(container)
         val isServer = !container.PlayerInv.player.world.isRemote
         // Get a map of items used and how much are used
         val itemsToRemove: Map<Int,Int>? = recipeCalculator.doCraft(recipe)
         if (itemsToRemove == null) {
-            if (isServer)
+            if (isServer && !shift)
                 LOG.warn("MessageCraftItemHandler: Recipe '${recipe.registryName.toString()}' cannot be crafted from ${container.PlayerInv.player.displayNameString}'s inventory on server.")
             return false
         }
@@ -23,7 +23,7 @@ object CraftHandler {
                 container.isCraftResultIndex(key) && container.getSlot(value).stack.count <= value
             }
             if (!willCraftResultItemBeConsumed) {
-                if (isServer)
+                if (isServer && !shift)
                     LOG.warn("MessageCraftItemHandler: Cannot stack '${recipe.registryName.toString()}' into item slot on server.")
                 return false
             }
@@ -40,6 +40,9 @@ object CraftHandler {
         val leftOver = container.quickCraftResult.condensedAdd(recipeOutput)
         if (!leftOver.isEmpty) {
             container.PlayerInv.player.dropItem(recipeOutput, false)
+        }
+        if (shift) {
+            tryCraftRecipe(container, recipe, true)
         }
         return true
     }
