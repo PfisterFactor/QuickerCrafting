@@ -14,7 +14,7 @@ object GuiHandler: IGuiHandler {
 
     override fun getServerGuiElement(ID: Int, player: EntityPlayer?, world: World?, x: Int, y: Int, z: Int): Any? {
         return when (ID) {
-            0 -> ContainerQuickerCrafting(true, player!!.inventory)
+            0 -> ContainerQuickerCrafting(false, player!!.inventory)
             else -> null
         }
 

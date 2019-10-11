@@ -75,7 +75,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                     }
                 }
         val exemptSlot: ClientSlot? =
-                if (!ignoreExemption && exemptSlotIndex != -1 && exemptSlotIndex > ClientSlotsStart)
+                if (!ignoreExemption && exemptSlotIndex != -1 && exemptSlotIndex >= ClientSlotsStart)
             getSlot(exemptSlotIndex) as ClientSlot
         else
             null

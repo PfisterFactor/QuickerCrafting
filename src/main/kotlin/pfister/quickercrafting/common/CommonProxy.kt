@@ -35,4 +35,5 @@ object CommonEventListener {
     fun registerItems(event: RegistryEvent.Register<Item>) {
         event.registry.register(ItemGuiTester())
     }
+
 }
