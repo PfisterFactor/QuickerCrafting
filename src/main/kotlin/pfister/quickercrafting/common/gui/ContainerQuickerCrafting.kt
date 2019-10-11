@@ -2,7 +2,7 @@ package pfister.quickercrafting.common.gui
 
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
-import net.minecraft.inventory.Container
+import net.minecraft.inventory.ContainerPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
 import net.minecraft.inventory.Slot
@@ -14,33 +14,28 @@ open class NoDragSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : Slot(
     }
 }
 
-open class ContainerQuickerCrafting(val PlayerInv: InventoryPlayer) : Container() {
-    val craftResult = InventoryBasic("", false, 3)
+open class ContainerQuickerCrafting(localWorld: Boolean = false, val PlayerInv: InventoryPlayer) : ContainerPlayer(PlayerInv, localWorld, PlayerInv.player) {
+    val quickCraftResult = InventoryBasic("", false, 3)
 
     init {
-        // Handle the player's inventory rendering
-        for (y in 0 until 3) {
-            for (x in 0 until 9) {
-                addSlotToContainer(
-                        Slot(PlayerInv, y * 9 + x + 9,
-                                8 + x * 18,
-                                90 + y * 18)
-                )
-            }
+        inventorySlots.take(5).forEach {
+            it.xPos = -18
+            it.yPos = -18
         }
-        for (hotbarIndex in 0 until 9) {
-            addSlotToContainer(Slot(PlayerInv,hotbarIndex,8 + hotbarIndex * 18, 148))
+        inventorySlots.drop(9).take(36).forEach {
+            it.yPos += 4
         }
-        //
+
+        // The slots on the right of the inventory
         for (i in 0 until 3) {
-            addSlotToContainer(NoDragSlot(craftResult,i, 184, 90 + i * 18))
+            addSlotToContainer(NoDragSlot(quickCraftResult, i, 184, 88 + i * 18))
         }
     }
 
     fun canFitStackInCraftResult(stack:ItemStack): Boolean {
         val workingStack = stack.copy()
-        for (i in 0 until craftResult.sizeInventory) {
-            val item = craftResult.getStackInSlot(i)
+        for (i in 0 until quickCraftResult.sizeInventory) {
+            val item = quickCraftResult.getStackInSlot(i)
             if (item.isEmpty)
                 return true
             else if (ItemStack.areItemsEqual(workingStack, item)) {
@@ -63,8 +58,8 @@ open class ContainerQuickerCrafting(val PlayerInv: InventoryPlayer) : Container(
 
     override fun onContainerClosed(playerIn: EntityPlayer) {
         super.onContainerClosed(playerIn)
-        for (i in 0 until craftResult.sizeInventory) {
-            val stack = craftResult.removeStackFromSlot(i)
+        for (i in 0 until quickCraftResult.sizeInventory) {
+            val stack = quickCraftResult.removeStackFromSlot(i)
             if (!playerIn.inventory.addItemStackToInventory(stack)) {
                 playerIn.dropItem(stack, false)
             }

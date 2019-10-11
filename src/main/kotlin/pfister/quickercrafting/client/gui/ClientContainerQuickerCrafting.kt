@@ -1,16 +1,21 @@
 package pfister.quickercrafting.client.gui
 
+import net.minecraft.client.Minecraft
+import net.minecraft.client.util.ITooltipFlag
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
 import net.minecraft.util.NonNullList
+import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.relauncher.Side
 import net.minecraftforge.fml.relauncher.SideOnly
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.gui.NoDragSlot
 import pfister.quickercrafting.common.util.RecipeCalculator
+import java.util.*
+
 
 enum class SlotState {
     ENABLED,
@@ -27,7 +32,7 @@ class ClientSlot(inv:IInventory, index:Int, xPos:Int, yPos:Int): NoDragSlot(inv,
 }
 
 @SideOnly(Side.CLIENT)
-class ClientContainerQuickerCrafting(playerInv:InventoryPlayer): ContainerQuickerCrafting(playerInv) {
+class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuickerCrafting(true, playerInv) {
     val RecipeCalculator: RecipeCalculator = RecipeCalculator(this)
     val ClientSlotsStart: Int = inventorySlots.size
 
@@ -35,27 +40,30 @@ class ClientContainerQuickerCrafting(playerInv:InventoryPlayer): ContainerQuicke
     val recipeInventory = InventoryBasic("",false, 27)
     var shouldDisplayScrollbar = false
     private var slotRowYOffset = 0
-    var craftableRecipes: List<IRecipe> = RecipeCalculator.getRecipeList()
+    var craftableRecipes: List<IRecipe> = RecipeCalculator.genRecipeList()
+    private var displayedRecipes: List<IRecipe> = craftableRecipes
+    var currentSearchQuery: String = ""
+    var ignoreExemption: Boolean = false
 
     init {
         for (y in 0 until 3) {
             for (x in 0 until 9) {
-                addSlotToContainer(ClientSlot(recipeInventory, y * 9 + x, 8 + x * 18, 20 + y * 18))
+                addSlotToContainer(ClientSlot(recipeInventory, y * 9 + x, 98 + x * 18, 20 + y * 18))
             }
         }
     }
 
     fun updateDisplay(currentScroll:Double, exemptSlotIndex:Int) {
-        val length = craftableRecipes.count()
+        val length = displayedRecipes.count()
         val rows = (length + 8) / 9 - 3
         slotRowYOffset = ((currentScroll * rows.toDouble()) + 0.5).toInt()
         shouldDisplayScrollbar = length > inventorySlots.size - ClientSlotsStart
         inventorySlots
                 .drop(ClientSlotsStart)
-                .filterNot { it.slotNumber == exemptSlotIndex }
+                .filterNot { it.slotNumber == exemptSlotIndex && !ignoreExemption }
                 .map { it as ClientSlot}
                 .forEach { slot ->
-                    val recipe = craftableRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
+                    val recipe = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
                     if (recipe != null) {
                         slot.putStack(recipe.recipeOutput)
                         slot.State = SlotState.ENABLED
@@ -67,28 +75,40 @@ class ClientContainerQuickerCrafting(playerInv:InventoryPlayer): ContainerQuicke
                     }
                 }
         val exemptSlot: ClientSlot? =
-        if (exemptSlotIndex != -1 && exemptSlotIndex > ClientSlotsStart)
+                if (!ignoreExemption && exemptSlotIndex != -1 && exemptSlotIndex > ClientSlotsStart)
             getSlot(exemptSlotIndex) as ClientSlot
         else
             null
 
-        if (exemptSlot != null && exemptSlot.State != SlotState.DISABLED && exemptSlot!!.Recipe != null && !craftableRecipes.contains(exemptSlot.Recipe))
+        if (!ignoreExemption && exemptSlot != null && exemptSlot.State != SlotState.DISABLED && exemptSlot.Recipe != null && !craftableRecipes.contains(exemptSlot.Recipe!!))
             exemptSlot.State = SlotState.EMPTY
+        ignoreExemption = false
 
     }
-    fun getRecipeForSlot(slotNum: Int): IRecipe?  {
-        return if (slotNum < ClientSlotsStart || slotNum >= inventorySlots.size)
-            null
+
+    fun handleSearch(query: String) {
+        if (query.isNotBlank()) {
+            displayedRecipes = craftableRecipes.filter {
+                val tooltip = it.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL)
+                for (line in tooltip) {
+                    if (TextFormatting.getTextWithoutFormattingCodes(line)!!.toLowerCase(Locale.ROOT).contains(query, true)) {
+                        return@filter true
+                    }
+                }
+                return@filter false
+            }
+            ignoreExemption = true
+            currentSearchQuery = query
+        }
         else {
-            (getSlot(slotNum) as ClientSlot).Recipe
+            displayedRecipes = craftableRecipes
         }
     }
-
     // Only sends changes for the slots shared between server and client
     override fun detectAndSendChanges() {
         // If any changes were made to the inventory at all
         var stackChangedFlag = false
-        for (i in 0..ClientSlotsStart) {
+        for (i in 0 until ClientSlotsStart) {
             val itemstack = this.inventorySlots[i].stack
             var itemstack1 = this.inventoryItemStacks[i]
 
@@ -104,8 +124,12 @@ class ClientContainerQuickerCrafting(playerInv:InventoryPlayer): ContainerQuicke
                 }
             }
             // Regenerate the possible craftable recipes if any changes were made to the inventory
-            if (stackChangedFlag)
-                craftableRecipes = RecipeCalculator.getRecipeList()
+            if (stackChangedFlag) {
+                craftableRecipes = RecipeCalculator.genRecipeList()
+                displayedRecipes = craftableRecipes
+                handleSearch(currentSearchQuery)
+            }
+
 
         }
 

@@ -19,7 +19,7 @@ object CraftHandler {
         }
         if (!container.canFitStackInCraftResult(recipe.recipeOutput)) {
             // Detect to see if after crafting there will be an open slot in the craft result slots, if there is we can put the item there
-            val willCraftResultItemBeConsumed = itemsToRemove?.entries?.any { (key: Int, value: Int) ->
+            val willCraftResultItemBeConsumed = itemsToRemove.entries.any { (key: Int, value: Int) ->
                 container.isCraftResultIndex(key) && container.getSlot(value).stack.count <= value
             }
             if (!willCraftResultItemBeConsumed) {
@@ -37,7 +37,7 @@ object CraftHandler {
         // Get the recipe output itemstack
         // Todo: This will not work on special recipes (Repairing, Cloning Books, Fireworks, etc...)
         val recipeOutput = recipe.recipeOutput.copy()
-        val leftOver = container.craftResult.condensedAdd(recipeOutput)
+        val leftOver = container.quickCraftResult.condensedAdd(recipeOutput)
         if (!leftOver.isEmpty) {
             container.PlayerInv.player.dropItem(recipeOutput, false)
         }

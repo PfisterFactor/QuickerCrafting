@@ -1,7 +1,10 @@
 package pfister.quickercrafting.common.gui
 
 import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.Gui
+import net.minecraft.client.gui.GuiTextField
 import net.minecraft.client.gui.inventory.GuiContainer
+import net.minecraft.client.gui.inventory.GuiInventory
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.RenderHelper
 import net.minecraft.client.resources.I18n
@@ -17,6 +20,7 @@ import net.minecraftforge.fml.client.config.GuiUtils
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.relauncher.Side
+import org.lwjgl.input.Keyboard
 import org.lwjgl.input.Mouse
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
@@ -27,13 +31,11 @@ import pfister.quickercrafting.common.network.MessageCraftItem
 import pfister.quickercrafting.common.network.PacketHandler
 import pfister.quickercrafting.common.util.CraftHandler
 
-// Companion object for GuiQuickerCrafting
-// The name is slightly different because forge throws a fit if we try to register an object as an event handler with the same name as a non-static class
+
 @Mod.EventBusSubscriber(Side.CLIENT)
 class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContainerQuickerCrafting(playerInv)) {
     companion object {
-        val TEXTURE: ResourceLocation = ResourceLocation(
-                MOD_ID, "textures/gui/quickercrafting_new.png")
+        val TEXTURE: ResourceLocation = ResourceLocation(MOD_ID, "textures/gui/quickercrafting_inv.png")
 
         @JvmStatic
         @SubscribeEvent
@@ -143,7 +145,9 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
             }
         }
     }
-    lateinit var Scrollbar: GuiScrollBar
+
+    private lateinit var Searchfield: GuiTextField
+    private lateinit var Scrollbar: GuiScrollBar
 
 
     // If the mouse was down the last frame
@@ -153,18 +157,25 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
     init {
         // Set size of window
-        this.xSize = 207
-        this.ySize = 172
+        this.xSize = 283
+        this.ySize = 170
     }
 
     override fun initGui() {
         super.initGui()
         Scrollbar = GuiScrollBar(guiLeft, guiTop)
+        Searchfield = GuiTextField(0, fontRenderer, guiLeft + 144, guiTop + 7, 87, 9)
+        Searchfield.maxStringLength = 50
+        Searchfield.enableBackgroundDrawing = false
+        //Searchfield.visible = false
+        Searchfield.setTextColor(16777215)
+        Searchfield.isFocused = false
+
     }
 
     override fun updateScreen() {
         super.updateScreen()
-
+        (this.inventorySlots as ClientContainerQuickerCrafting).currentSearchQuery = Searchfield.text
         inventorySlots.detectAndSendChanges()
     }
 
@@ -174,6 +185,19 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         else if (hoveredRecipeAndItemMap != null && mouseButton == 0) {
             if (CraftHandler.tryCraftRecipe(this.inventorySlots as ContainerQuickerCrafting, hoveredRecipeAndItemMap!!.first))
                 PacketHandler.INSTANCE.sendToServer(MessageCraftItem(hoveredRecipeAndItemMap!!.first))
+        }
+    }
+
+    override fun keyTyped(typedChar: Char, keyCode: Int) {
+        if (!checkHotbarKeys(keyCode)) {
+            if (Searchfield.textboxKeyTyped(typedChar, keyCode)) {
+                (inventorySlots as ClientContainerQuickerCrafting).handleSearch(Searchfield.text)
+            } else {
+                if (keyCode == Keyboard.KEY_TAB) {
+                    Searchfield.isFocused = true
+                } else
+                    super.keyTyped(typedChar, keyCode)
+            }
         }
     }
 
@@ -193,25 +217,33 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         }
     }
 
+    override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
+        super.mouseClicked(mouseX, mouseY, mouseButton)
+        Searchfield.mouseClicked(mouseX, mouseY, mouseButton)
+    }
+
     // Draws the background to the GUI
     override fun drawGuiContainerBackgroundLayer(partialTicks: Float, mouseX: Int, mouseY: Int) {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         // Bind the GUI texture
         this.mc.textureManager.bindTexture(TEXTURE)
-        this.drawTexturedModalRect(this.guiLeft,
-                this.guiTop,
-                0,
-                0,
-                this.xSize,
-                this.ySize)
+        Gui.drawModalRectWithCustomSizedTexture(this.guiLeft, this.guiTop, 0f, 0f, this.xSize, this.ySize, 512f, 256f)
+//        this.drawTexturedModalRect(this.guiLeft
+//                this.guiTop,
+//                0,
+//                0,
+//                this.xSize,
+//                this.ySize)
+        GuiInventory.drawEntityOnScreen(this.guiLeft + 51, this.guiTop + 75, 30, this.guiLeft.toFloat() + 51 - mouseX, this.guiTop.toFloat() + 25 - mouseY, Minecraft.getMinecraft().player)
+        Searchfield.drawTextBox()
         if (hoveredRecipeAndItemMap != null) {
             GlStateManager.pushMatrix()
-            // Draws red transparent rectangles behind items that will be used to craft the recipe
-            hoveredRecipeAndItemMap!!.second.forEach {(key,value) ->
+            // Draws green transparent rectangles behind items that will be used to craft the recipe
+            hoveredRecipeAndItemMap!!.second.forEach { (key, _) ->
                 val row = key / 9
                 val column = key % 9
                 val xToDrawAt = guiLeft + 8 + column * 18
-                val yToDrawAt = if (row < 3) guiTop + 90 + row * 18 else guiTop + 148
+                val yToDrawAt = if (row < 4) guiTop + 70 + row * 18 else guiTop + 146
 
                 GuiUtils.drawGradientRect(0,
                         xToDrawAt,
@@ -222,6 +254,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
             }
             GlStateManager.popMatrix()
         }
+
 
     }
 
@@ -266,12 +299,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
     override fun drawGuiContainerForegroundLayer(mouseX: Int, mouseY: Int) {
         this.fontRenderer.drawString(I18n.format("container.crafting"),
-                8,
+                99,
                 6,
-                4210752)
-        this.fontRenderer.drawString(I18n.format("container.inventory"),
-                8,
-                78,
                 4210752)
         GlStateManager.colorMask(true, true, true, false)
         GlStateManager.pushMatrix()
@@ -280,23 +309,24 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         this.mc.textureManager.bindTexture(TEXTURE)
         if (Scrollbar.isEnabled)
-            this.drawTexturedModalRect(
+
+            Gui.drawModalRectWithCustomSizedTexture(
                     GuiScrollBar.GUI_POS_X,
                     MathHelper.clamp(GuiScrollBar.GUI_POS_Y - GuiScrollBar.TEX_HEIGHT / 2 + (GuiScrollBar.SCROLLBAR_HEIGHT * Scrollbar.currentScroll).toInt(), GuiScrollBar.GUI_POS_Y, GuiScrollBar.GUI_POS_Y + GuiScrollBar.SCROLLBAR_HEIGHT - GuiScrollBar.TEX_HEIGHT - 1
                     ),
-                    GuiScrollBar.TEX_OFFSET_X,
-                    GuiScrollBar.TEX_OFFSET_Y,
+                    GuiScrollBar.TEX_OFFSET_X.toFloat(),
+                    GuiScrollBar.TEX_OFFSET_Y.toFloat(),
                     GuiScrollBar.TEX_WIDTH,
-                    GuiScrollBar.TEX_HEIGHT
+                    GuiScrollBar.TEX_HEIGHT, 512f, 256f
             )
         else {
-            this.drawTexturedModalRect(
+            Gui.drawModalRectWithCustomSizedTexture(
                     GuiScrollBar.GUI_POS_X,
                     GuiScrollBar.GUI_POS_Y,
-                    GuiScrollBar.TEX_OFFSET_X + GuiScrollBar.TEX_WIDTH,
-                    GuiScrollBar.TEX_OFFSET_Y,
+                    GuiScrollBar.TEX_OFFSET_X.toFloat() + GuiScrollBar.TEX_WIDTH,
+                    GuiScrollBar.TEX_OFFSET_Y.toFloat(),
                     GuiScrollBar.TEX_WIDTH,
-                    GuiScrollBar.TEX_HEIGHT
+                    GuiScrollBar.TEX_HEIGHT, 512f, 256f
             )
             Scrollbar.currentScroll = 0.0
         }
@@ -309,8 +339,11 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
     }
 
     override fun hasClickedOutside(mouseX: Int, mouseY: Int, left: Int, top: Int): Boolean {
-        return if (mouseY > top + 107) {
-            mouseX < left || mouseX > left + 175 || mouseY < top || mouseY > top + ySize
+        return if (mouseY > top + 78) {
+            if (mouseY > top + 147)
+                mouseX < left || mouseX > left + 175 || mouseY < top || mouseY > top + ySize
+            else
+                mouseX < left || mouseX > left + 206 || mouseY < top || mouseY > top + ySize
         } else
             super.hasClickedOutside(mouseX, mouseY, left, top)
     }

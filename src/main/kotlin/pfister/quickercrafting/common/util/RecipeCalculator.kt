@@ -93,7 +93,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     // Determines if the inventory can craft a recipe
     fun canCraft(recipe: IRecipe): Boolean = doCraft(recipe) != null
 
-    fun getRecipeList(): List<IRecipe> {
+    fun genRecipeList(): List<IRecipe> {
         return SortedRecipes.filter { recipe ->
             canCraft(recipe)
         }
