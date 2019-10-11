@@ -40,7 +40,8 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     val recipeInventory = InventoryBasic("",false, 27)
     var shouldDisplayScrollbar = false
     private var slotRowYOffset = 0
-    var craftableRecipes: List<IRecipe> = RecipeCalculator.genRecipeList()
+    var craftableRecipes: MutableList<IRecipe> = mutableListOf()
+
     private var displayedRecipes: List<IRecipe> = craftableRecipes
     var currentSearchQuery: String = ""
     var ignoreExemption: Boolean = false
@@ -51,6 +52,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 addSlotToContainer(ClientSlot(recipeInventory, y * 9 + x, 98 + x * 18, 20 + y * 18))
             }
         }
+        //RecipeCalculator.populateRecipeList(craftableRecipes)
     }
 
     fun updateDisplay(currentScroll:Double, exemptSlotIndex:Int) {
@@ -123,12 +125,12 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                     stackChangedFlag = true
                 }
             }
-            // Regenerate the possible craftable recipes if any changes were made to the inventory
-            if (stackChangedFlag) {
-                craftableRecipes = RecipeCalculator.genRecipeList()
-                displayedRecipes = craftableRecipes
-                handleSearch(currentSearchQuery)
             }
+        // Regenerate the possible craftable recipes if any changes were made to the inventory
+        if (stackChangedFlag) {
+            RecipeCalculator.populateRecipeList(craftableRecipes)
+            displayedRecipes = craftableRecipes
+            handleSearch(currentSearchQuery)
 
 
         }

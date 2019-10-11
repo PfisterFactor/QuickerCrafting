@@ -7,6 +7,7 @@ import net.minecraft.item.crafting.IRecipe
 import net.minecraft.item.crafting.Ingredient
 import net.minecraftforge.fml.common.registry.ForgeRegistries
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
+import kotlin.concurrent.thread
 
 class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     companion object {
@@ -58,6 +59,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
                     comparison
                 })
     }
+
     // Attempts to craft a recipe using the players inventory
     // If success, returns a list of indexes to the passed in item list corresponding to ingredients used and amount used
     // If failure, returns None
@@ -93,9 +95,15 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     // Determines if the inventory can craft a recipe
     fun canCraft(recipe: IRecipe): Boolean = doCraft(recipe) != null
 
-    fun genRecipeList(): List<IRecipe> {
-        return SortedRecipes.filter { recipe ->
-            canCraft(recipe)
+    private var running_thread: Thread? = null
+    fun populateRecipeList(list: MutableList<IRecipe>) {
+        running_thread?.interrupt()
+        running_thread = thread {
+            val intermidate = SortedRecipes.filter { recipe ->
+                canCraft(recipe)
+            }
+            list.clear()
+            list.addAll(intermidate)
         }
     }
 }
