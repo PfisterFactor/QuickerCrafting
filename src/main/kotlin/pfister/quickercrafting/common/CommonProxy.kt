@@ -7,10 +7,13 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.network.NetworkRegistry
+import pfister.quickercrafting.LOG
 import pfister.quickercrafting.QuickerCrafting
 import pfister.quickercrafting.common.gui.GuiHandler
 import pfister.quickercrafting.common.item.ItemGuiTester
 import pfister.quickercrafting.common.network.PacketHandler
+import pfister.quickercrafting.common.util.RecipeCalculator
+import kotlin.system.measureTimeMillis
 
 open class CommonProxy {
     @Mod.EventHandler
@@ -24,6 +27,8 @@ open class CommonProxy {
 
     @Mod.EventHandler
     open fun postInit(event: FMLPostInitializationEvent) {
+        val ms = measureTimeMillis { RecipeCalculator.SortedRecipes }
+        LOG.info("Sorting Recipes took ${ms}ms.")
     }
 }
 

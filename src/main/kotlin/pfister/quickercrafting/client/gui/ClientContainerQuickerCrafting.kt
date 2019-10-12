@@ -52,7 +52,6 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 addSlotToContainer(ClientSlot(recipeInventory, y * 9 + x, 98 + x * 18, 20 + y * 18))
             }
         }
-        //RecipeCalculator.populateRecipeList(craftableRecipes)
     }
 
     fun updateDisplay(currentScroll:Double, exemptSlotIndex:Int) {

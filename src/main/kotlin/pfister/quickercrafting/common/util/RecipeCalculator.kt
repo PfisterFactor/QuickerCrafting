@@ -1,8 +1,6 @@
 package pfister.quickercrafting.common.util
 
-import net.minecraft.creativetab.CreativeTabs
-import net.minecraft.item.ItemBlock
-import net.minecraft.item.ItemDoor
+import net.minecraft.item.Item
 import net.minecraft.item.crafting.IRecipe
 import net.minecraft.item.crafting.Ingredient
 import net.minecraftforge.fml.common.registry.ForgeRegistries
@@ -11,53 +9,16 @@ import kotlin.concurrent.thread
 
 class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     companion object {
-        val SortedRecipes: List<IRecipe> = ForgeRegistries.RECIPES.valuesCollection
-                .filterNot { it.isDynamic || it.ingredients.size == 0 }
-                .sortedWith(Comparator<IRecipe> { o1, o2 ->
-                    val itemX = o1.recipeOutput.item
-                    val itemY = o2.recipeOutput.item
-
-                    // Blocks are first
-                    val xIsBlock = itemX is ItemBlock || itemX is ItemDoor
-                    val yIsBlock = itemY is ItemBlock || itemY is ItemDoor
-
-                    if (xIsBlock && !yIsBlock) return@Comparator -1
-                    else if (yIsBlock && !xIsBlock) return@Comparator 1
-                    else if (xIsBlock && yIsBlock) {
-                        // Special check for doors
-                        if (itemX is ItemDoor && itemY !is ItemDoor) return@Comparator 1
-                        else if (!(itemX is ItemDoor) && itemY is ItemDoor) return@Comparator -1
-                        else if (itemX is ItemDoor && itemY is ItemDoor) return@Comparator 0
-
-                        val blockX = (itemX as ItemBlock).block
-                        val blockY = (itemY as ItemBlock).block
-                        // Full blocks/building blocks should be put first
-                        val isBuildingOrFullBlockX = blockX.isFullBlock(blockX.defaultState) || blockX.creativeTabToDisplayOn == CreativeTabs.BUILDING_BLOCKS
-                        val isBuildingOrFullBlockY = blockY.isFullBlock(blockY.defaultState) || blockY.creativeTabToDisplayOn == CreativeTabs.BUILDING_BLOCKS
-                        if (isBuildingOrFullBlockX && !isBuildingOrFullBlockY) return@Comparator -1
-                        else if (!isBuildingOrFullBlockX && isBuildingOrFullBlockY) return@Comparator 1
-                        // Otherwise just do a default comparison
-                        var comparison = blockX::class.simpleName!!.compareTo(blockY::class.simpleName!!)
-                        if (comparison == 0) {
-                            comparison = blockX.unlocalizedName.compareTo(blockY.unlocalizedName)
-                        }
-                        return@Comparator comparison
-                    }
-                    // Next is damageable items, typically tools, swords, hoes, armor, etc...
-                    val xIsDamageable = itemX.isDamageable
-                    val yIsDamageable = itemY.isDamageable
-
-                    if (xIsDamageable && !yIsDamageable) return@Comparator -1
-                    else if (yIsDamageable && !xIsDamageable) return@Comparator 1
-
-                    // Lastly a default check between class names and, failing that, their unlocalized names
-                    var comparison =
-                            itemX::class.simpleName!!.compareTo(itemY::class.simpleName!!)
-                    if (comparison == 0) {
-                        comparison = itemX.unlocalizedName.compareTo(itemY.unlocalizedName)
-                    }
-                    comparison
-                })
+        val SortedRecipes: ArrayList<IRecipe> = run {
+            val items = Item.REGISTRY
+            ArrayList(ForgeRegistries.RECIPES.valuesCollection
+                    .filterNot { it.isDynamic || it.ingredients.size == 0 }
+                    .sortedWith(Comparator { recipe1, recipe2 ->
+                        val r1 = items.indexOfFirst { recipe1.recipeOutput.item == it }
+                        val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
+                        return@Comparator r1 - r2
+                    }))
+        }
     }
 
     // Attempts to craft a recipe using the players inventory
@@ -98,9 +59,9 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     private var running_thread: Thread? = null
     fun populateRecipeList(list: MutableList<IRecipe>) {
         running_thread?.interrupt()
-        running_thread = thread {
-            val intermidate = SortedRecipes.filter { recipe ->
-                canCraft(recipe)
+        running_thread = thread(isDaemon = true) {
+            val intermidate = SortedRecipes.filter {
+                canCraft(it)
             }
             list.clear()
             list.addAll(intermidate)
