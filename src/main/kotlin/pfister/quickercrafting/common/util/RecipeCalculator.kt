@@ -41,7 +41,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
                         }
                     }
                     if (index != -1) {
-                        usedItemMap.put(index,usedItemMap.getOrDefault(index,0) + 1)
+                        usedItemMap[index] = usedItemMap.getOrDefault(index, 0) + 1
                         true
                     }
                     else false
@@ -60,11 +60,11 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     fun populateRecipeList(list: MutableList<IRecipe>) {
         running_thread?.interrupt()
         running_thread = thread(isDaemon = true) {
-            val intermidate = SortedRecipes.filter {
+            val intermediate = SortedRecipes.filter {
                 canCraft(it)
             }
             list.clear()
-            list.addAll(intermidate)
+            list.addAll(intermediate)
         }
     }
 }
