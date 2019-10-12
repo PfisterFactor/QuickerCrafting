@@ -238,13 +238,16 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         Searchfield.drawTextBox()
         if (hoveredRecipeAndItemMap != null) {
             GlStateManager.pushMatrix()
-            // Draws green transparent rectangles behind items that will be used to craft the recipe
+            // Draws green semi-transparent rectangles behind items that will be used to craft the recipe
             hoveredRecipeAndItemMap!!.second.forEach { (key, _) ->
-                val row = key / 9
+                val row = key / 9 // 1-4 is the player's inventory, 5 is the craft buffer on the right
                 val column = key % 9
-                val xToDrawAt = guiLeft + 8 + column * 18
-                val yToDrawAt = if (row < 4) guiTop + 70 + row * 18 else guiTop + 146
-
+                var xToDrawAt = guiLeft + 8 + column * 18
+                var yToDrawAt = if (row < 4) guiTop + 70 + row * 18 else guiTop + 146
+                if (row >= 5) {
+                    xToDrawAt = guiLeft + 184
+                    yToDrawAt = guiTop + 70 + column * 18
+                }
                 GuiUtils.drawGradientRect(0,
                         xToDrawAt,
                         yToDrawAt,
