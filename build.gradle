@@ -11,7 +11,6 @@ buildscript {
 
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-
     }
 }
 plugins {
@@ -52,7 +51,6 @@ dependencies {
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile group: "net.shadowfacts", name: "Forgelin", version: "1.8.3"
-    implementation 'me.xdrop:fuzzywuzzy:1.2.0'
     // you may put jars on which you depend on in ./libs
     // or you may define them like so..
     //compile "some.group:artifact:version:classifier"
@@ -98,7 +96,6 @@ processResources {
 jar {
 
     manifest {
-
         attributes 'FMLAT': 'quickercrafting_at.cfg'
     }
 }

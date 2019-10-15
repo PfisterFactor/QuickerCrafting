@@ -12,7 +12,8 @@ const val MOD_ID = "quickercrafting"
 const val MOD_NAME = "Quicker Crafting"
 const val VERSION = "0.1"
 lateinit var LOG: Logger
-@Mod(modid = MOD_ID, name = MOD_NAME, version = VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter")
+
+@Mod(modid = MOD_ID, name = MOD_NAME, version = VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "after:inventorytweaks;after:mousetweaks;")
 object QuickerCrafting {
     @SidedProxy(
             clientSide = "pfister.quickercrafting.client.ClientProxy",

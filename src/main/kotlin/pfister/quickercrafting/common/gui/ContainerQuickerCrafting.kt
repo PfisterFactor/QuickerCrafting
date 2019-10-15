@@ -1,5 +1,6 @@
 package pfister.quickercrafting.common.gui
 
+import invtweaks.api.container.IgnoreContainer
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.ContainerPlayer
@@ -14,6 +15,8 @@ open class NoDragSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : Slot(
     }
 }
 
+
+@IgnoreContainer
 open class ContainerQuickerCrafting(localWorld: Boolean = false, val PlayerInv: InventoryPlayer) : ContainerPlayer(PlayerInv, localWorld, PlayerInv.player) {
     val quickCraftResult = InventoryBasic("", false, 3)
 

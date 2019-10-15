@@ -30,9 +30,11 @@ import pfister.quickercrafting.client.gui.SlotState
 import pfister.quickercrafting.common.network.MessageCraftItem
 import pfister.quickercrafting.common.network.PacketHandler
 import pfister.quickercrafting.common.util.CraftHandler
+import yalter.mousetweaks.api.MouseTweaksIgnore
 
 
 @Mod.EventBusSubscriber(Side.CLIENT)
+@MouseTweaksIgnore
 class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContainerQuickerCrafting(playerInv)) {
     companion object {
         val TEXTURE: ResourceLocation = ResourceLocation(MOD_ID, "textures/gui/quickercrafting_inv.png")
@@ -154,7 +156,6 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
     private var wasClicking = false
 
     var hoveredRecipeAndItemMap: Pair<IRecipe, Map<Int, Int>>? = null
-
     init {
         // Set size of window
         this.xSize = 283
@@ -193,10 +194,11 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
             if (Searchfield.textboxKeyTyped(typedChar, keyCode)) {
                 (inventorySlots as ClientContainerQuickerCrafting).handleSearch(Searchfield.text)
             } else {
-                if (keyCode == Keyboard.KEY_TAB) {
-                    Searchfield.isFocused = true
-                } else
-                    super.keyTyped(typedChar, keyCode)
+                when (keyCode) {
+                    Keyboard.KEY_TAB -> Searchfield.isFocused = true
+                    Keyboard.KEY_E -> Minecraft.getMinecraft().player.closeScreen()
+                    else -> super.keyTyped(typedChar, keyCode)
+                }
             }
         }
     }
@@ -286,7 +288,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         if (slotUnderMouse != null && slotUnderMouse
                         is ClientSlot) {
             val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipe
-            val itemMap: Map<Int,Int>? = if (recipe != null) (inventorySlots as ClientContainerQuickerCrafting).RecipeCalculator.doCraft(recipe) else null
+            val itemMap: Map<Int, Int>? = if (recipe != null) (inventorySlots as ClientContainerQuickerCrafting).RecipeCalculator.doCraft(inventorySlots.inventory, recipe).ItemMap else null
             hoveredRecipeAndItemMap = if (itemMap != null) Pair(recipe!!,itemMap) else null
         } else
             hoveredRecipeAndItemMap = null
