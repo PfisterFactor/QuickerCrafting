@@ -11,15 +11,15 @@ object CraftHandler {
         val recipeCalculator = RecipeCalculator(container)
         val isServer = !container.PlayerInv.player.world.isRemote
         // Get a map of items used and how much are used
-        val itemsToRemove: Map<Int,Int>? = recipeCalculator.doCraft(recipe)
-        if (itemsToRemove == null) {
+        val itemsToRemove: RecipeCalculator.CraftingInfo = recipeCalculator.doCraft(container.inventory, recipe)
+        if (!itemsToRemove.canCraft()) {
             if (isServer && !shift)
                 LOG.warn("MessageCraftItemHandler: Recipe '${recipe.registryName.toString()}' cannot be crafted from ${container.PlayerInv.player.displayNameString}'s inventory on server.")
             return false
         }
         if (!container.canFitStackInCraftResult(recipe.recipeOutput)) {
             // Detect to see if after crafting there will be an open slot in the craft result slots, if there is we can put the item there
-            val willCraftResultItemBeConsumed = itemsToRemove.entries.any { (key: Int, value: Int) ->
+            val willCraftResultItemBeConsumed = itemsToRemove.ItemMap.entries.any { (key: Int, value: Int) ->
                 container.isCraftResultIndex(key) && container.getSlot(value).stack.count <= value
             }
             if (!willCraftResultItemBeConsumed) {
@@ -29,7 +29,7 @@ object CraftHandler {
             }
         }
         // Remove all items used during crafting
-        itemsToRemove.entries.forEach { (key: Int, value: Int) ->
+        itemsToRemove.ItemMap.entries.forEach { (key: Int, value: Int) ->
             val slot = container.getSlot(key)
             slot.decrStackSize(value)
         }

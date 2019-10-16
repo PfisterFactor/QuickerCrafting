@@ -14,6 +14,7 @@ import net.minecraftforge.fml.relauncher.SideOnly
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.gui.NoDragSlot
 import pfister.quickercrafting.common.util.RecipeCalculator
+import pfister.quickercrafting.common.util.RecipeList
 import java.util.*
 
 
@@ -40,9 +41,9 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     val recipeInventory = InventoryBasic("",false, 27)
     var shouldDisplayScrollbar = false
     private var slotRowYOffset = 0
-    var craftableRecipes: MutableList<IRecipe> = mutableListOf()
+    var craftableRecipes: MutableList<RecipeList> = mutableListOf()
 
-    private var displayedRecipes: List<IRecipe> = craftableRecipes
+    private var displayedRecipes: List<RecipeList> = craftableRecipes
     var currentSearchQuery: String = ""
     var ignoreExemption: Boolean = false
 
@@ -66,9 +67,9 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 .forEach { slot ->
                     val recipe = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
                     if (recipe != null) {
-                        slot.putStack(recipe.recipeOutput)
+                        slot.putStack(recipe.first().recipeOutput)
                         slot.State = SlotState.ENABLED
-                        slot.Recipe = recipe
+                        slot.Recipe = recipe.first()
                     } else {
                         slot.putStack(ItemStack.EMPTY)
                         slot.State = SlotState.DISABLED
@@ -81,7 +82,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         else
             null
 
-        if (!ignoreExemption && exemptSlot != null && exemptSlot.State != SlotState.DISABLED && exemptSlot.Recipe != null && !craftableRecipes.contains(exemptSlot.Recipe!!))
+        if (!ignoreExemption && exemptSlot != null && exemptSlot.State != SlotState.DISABLED && exemptSlot.Recipe != null && !craftableRecipes.any { it.contains(exemptSlot.Recipe!!) })
             exemptSlot.State = SlotState.EMPTY
         ignoreExemption = false
 
@@ -90,7 +91,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     fun handleSearch(query: String) {
         if (query.isNotBlank()) {
             displayedRecipes = craftableRecipes.filter {
-                val tooltip = it.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL)
+                val tooltip = it.first().recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL)
                 for (line in tooltip) {
                     if (TextFormatting.getTextWithoutFormattingCodes(line)!!.toLowerCase(Locale.ROOT).contains(query, true)) {
                         return@filter true

@@ -19,7 +19,6 @@ open class NoDragSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : Slot(
 @IgnoreContainer
 open class ContainerQuickerCrafting(localWorld: Boolean = false, val PlayerInv: InventoryPlayer) : ContainerPlayer(PlayerInv, localWorld, PlayerInv.player) {
     val quickCraftResult = InventoryBasic("", false, 3)
-
     init {
         inventorySlots.take(5).forEach {
             it.xPos = -18
