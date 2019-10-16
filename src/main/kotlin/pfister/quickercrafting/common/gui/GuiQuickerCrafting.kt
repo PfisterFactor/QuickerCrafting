@@ -57,6 +57,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
                         acc.plus(Pair(stackPacked, acc.getOrDefault(stackPacked, 0) + entry.value))
                     }
 
+
             val tooltipX = event.x + event.width + 7
             val tooltipY = event.y
 
@@ -221,6 +222,10 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
     override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
         super.mouseClicked(mouseX, mouseY, mouseButton)
+        val slot = slotUnderMouse
+        if (slot != null && slot is ClientSlot && mouseButton == 1) {
+            slot.RecipeIndex = (slot.RecipeIndex + 1) % (slot.Recipes?.size ?: 1)
+        }
         Searchfield.mouseClicked(mouseX, mouseY, mouseButton)
     }
 
@@ -287,7 +292,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
         if (slotUnderMouse != null && slotUnderMouse
                         is ClientSlot) {
-            val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipe
+            val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipes?.get((slotUnderMouse as ClientSlot).RecipeIndex)
             val itemMap: Map<Int, Int>? = if (recipe != null) (inventorySlots as ClientContainerQuickerCrafting).RecipeCalculator.doCraft(inventorySlots.inventory, recipe).ItemMap else null
             hoveredRecipeAndItemMap = if (itemMap != null) Pair(recipe!!,itemMap) else null
         } else

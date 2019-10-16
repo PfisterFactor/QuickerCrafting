@@ -14,7 +14,7 @@ object CraftHandler {
         val itemsToRemove: RecipeCalculator.CraftingInfo = recipeCalculator.doCraft(container.inventory, recipe)
         if (!itemsToRemove.canCraft()) {
             if (isServer && !shift)
-                LOG.warn("MessageCraftItemHandler: Recipe '${recipe.registryName.toString()}' cannot be crafted from ${container.PlayerInv.player.displayNameString}'s inventory on server.")
+                LOG.warn("MessageCraftItemHandler: Recipes '${recipe.registryName.toString()}' cannot be crafted from ${container.PlayerInv.player.displayNameString}'s inventory on server.")
             return false
         }
         if (!container.canFitStackInCraftResult(recipe.recipeOutput)) {

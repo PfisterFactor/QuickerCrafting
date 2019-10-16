@@ -38,7 +38,7 @@ class MessageCraftItem(var Recipe: IRecipe?, var Shift: Boolean = false) : IMess
 class MessageCraftItemHandler : IMessageHandler<MessageCraftItem, IMessage> {
     override fun onMessage(message: MessageCraftItem?, ctx: MessageContext?): IMessage? {
         if (message?.Recipe == null) {
-            LOG.warn("MessageCraftItemHandler: Recipe '${message?.recipeString}' cannot be found.")
+            LOG.warn("MessageCraftItemHandler: Recipes '${message?.recipeString}' cannot be found.")
             return null
         }
 

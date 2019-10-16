@@ -6,7 +6,6 @@ import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
 import net.minecraft.item.ItemStack
-import net.minecraft.item.crafting.IRecipe
 import net.minecraft.util.NonNullList
 import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.relauncher.Side
@@ -27,7 +26,8 @@ enum class SlotState {
 @SideOnly(Side.CLIENT)
 class ClientSlot(inv:IInventory, index:Int, xPos:Int, yPos:Int): NoDragSlot(inv,index,xPos, yPos) {
     var State: SlotState = SlotState.EMPTY
-    var Recipe: IRecipe? = null
+    var Recipes: RecipeList? = null
+    var RecipeIndex: Int = 0
 
     override fun isEnabled(): Boolean = State == SlotState.ENABLED || State == SlotState.EMPTY
 }
@@ -65,15 +65,16 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 .filterNot { it.slotNumber == exemptSlotIndex && !ignoreExemption }
                 .map { it as ClientSlot}
                 .forEach { slot ->
-                    val recipe = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
-                    if (recipe != null) {
-                        slot.putStack(recipe.first().recipeOutput)
+                    val recipes = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
+                    if (recipes != null) {
+                        slot.putStack(recipes[slot.RecipeIndex].recipeOutput)
                         slot.State = SlotState.ENABLED
-                        slot.Recipe = recipe.first()
+                        slot.Recipes = recipes
                     } else {
                         slot.putStack(ItemStack.EMPTY)
                         slot.State = SlotState.DISABLED
-                        slot.Recipe = null
+                        slot.Recipes = null
+                        slot.RecipeIndex = 0
                     }
                 }
         val exemptSlot: ClientSlot? =
@@ -82,7 +83,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         else
             null
 
-        if (!ignoreExemption && exemptSlot != null && exemptSlot.State != SlotState.DISABLED && exemptSlot.Recipe != null && !craftableRecipes.any { it.contains(exemptSlot.Recipe!!) })
+        if (!ignoreExemption && exemptSlot != null && exemptSlot.State != SlotState.DISABLED && exemptSlot.Recipes != null && !craftableRecipes.contains(exemptSlot.Recipes!!))
             exemptSlot.State = SlotState.EMPTY
         ignoreExemption = false
 
