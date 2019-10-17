@@ -1,13 +1,11 @@
 package pfister.quickercrafting.common.util
 
+import net.minecraft.client.util.RecipeItemHelper
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
 import net.minecraft.item.crafting.Ingredient
-import net.minecraft.item.crafting.ShapelessRecipes
-import net.minecraftforge.common.crafting.IShapedRecipe
 import net.minecraftforge.fml.common.registry.ForgeRegistries
-import net.minecraftforge.oredict.ShapelessOreRecipe
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import kotlin.concurrent.thread
 
@@ -20,7 +18,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
         val SortedRecipes: Map<Item, RecipeList> = run {
             val items = Item.REGISTRY
             ArrayList(ForgeRegistries.RECIPES.valuesCollection
-                    .filter { (it is IShapedRecipe || it is ShapelessRecipes || it is ShapelessOreRecipe) && (it as IRecipe).ingredients.size >= 1 }
+                    .filter { !it.isDynamic && (it as IRecipe).ingredients.size >= 1 }
                     .sortedWith(Comparator { recipe1, recipe2 ->
                         val r1 = items.indexOfFirst { recipe1.recipeOutput.item == it }
                         val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
@@ -29,7 +27,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
         }
     }
 
-    class CraftingInfo(val Recipe: IRecipe, val ItemMap: Map<Index, Amount>, val Missing: List<Ingredient>) {
+    data class CraftingInfo(val Recipe: IRecipe, val ItemMap: Map<Index, Amount>, val Missing: List<Ingredient>) {
         fun canCraft(): Boolean = Missing.isEmpty() && ItemMap.isNotEmpty()
 
     }
@@ -71,6 +69,14 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
 
                 }
         return CraftingInfo(recipe, usedItemMap.toMap(), missing)
+    }
+
+    fun doCraft2(inventory: List<ItemStack>, recipe: IRecipe): CraftingInfo {
+        val recipeItemHelper = RecipeItemHelper()
+        inventory.forEach { recipeItemHelper.accountStack(it) }
+        val test = recipeItemHelper.canCraft(recipe, null)
+        println(test)
+        return CraftingInfo(recipe, mapOf(), listOf())
     }
 
     // Determines if the inventory can craft a recipe

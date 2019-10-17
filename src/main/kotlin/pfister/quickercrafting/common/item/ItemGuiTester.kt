@@ -19,7 +19,7 @@ import pfister.quickercrafting.QuickerCrafting
 class ItemGuiTester : Item() {
     init {
         setRegistryName("gui_tester")
-        unlocalizedName = "$MOD_ID.gui_tester"
+        translationKey = "$MOD_ID.gui_tester"
         creativeTab = CreativeTabs.MISC
     }
 
