@@ -122,7 +122,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     // Only sends changes for the slots shared between server and client
     override fun detectAndSendChanges() {
         // If any changes were made to the inventory at all
-        var stackChangedFlag = false
+        var updateRecipes = false
         for (i in 0 until ClientSlotsStart) {
             val itemstack = this.inventorySlots[i].stack
             var itemstack1 = this.inventoryItemStacks[i]
@@ -135,22 +135,33 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
                 if (stackChanged) {
                     listeners.forEach { it.sendSlotContents(this, i, itemstack1) }
-                    stackChangedFlag = true
+                    if (i >= 9 && i != 45) {
+                        updateRecipes = true
+                    }
+
                 }
             }
             }
         // Regenerate the possible craftable recipes if any changes were made to the inventory
-        if (stackChangedFlag) {
+        if (updateRecipes) {
             RecipeCalculator.populateRecipeList(craftableRecipes) { checkScrollbar() }
             displayedRecipes = craftableRecipes
             handleSearch(currentSearchQuery)
 
         }
-
     }
+
+    // Get all the slots we craft with
+    // Excludes the player inventory's crafting matrix and result, plus the armor slots and offhand slot
     override fun getInventory(): NonNullList<ItemStack> {
         val list = NonNullList.create<ItemStack>()
-        list.addAll(super.getInventory().take(ClientSlotsStart))
+        list.addAll(inventorySlots.take(ClientSlotsStart).mapIndexed { i, elem ->
+            if (i < 9 || i == 45) {
+                ItemStack.EMPTY
+            } else {
+                elem.stack
+            }
+        })
         return list
     }
 

@@ -54,3 +54,23 @@ fun InventoryBasic.condensedAdd(itemStackToAdd: ItemStack): ItemStack {
 
     return copied
 }
+
+// Thanks kotlin standard library somehow you have an indexed foreach function but not a remove on immutable lists
+fun <E> List<E>.without(vararg elems: E): List<E> {
+    return fold(listOf()) { acc, i ->
+        if (!elems.contains(i)) {
+            acc + i
+        } else
+            acc
+    }
+}
+
+fun <E> List<E>.without(vararg indexes: Int): List<E> {
+    return foldIndexed(listOf()) { i, acc, elem ->
+        if (!indexes.contains(i)) {
+            acc + elem
+        } else {
+            acc
+        }
+    }
+}
