@@ -34,6 +34,8 @@ import yalter.mousetweaks.api.MouseTweaksIgnore
 
 
 @Mod.EventBusSubscriber(Side.CLIENT)
+// Tell mousetweaks to go away or it screws up scrolling through the list
+// Todo: Might be able to change this to @MouseTweaksDisableWheelTweak
 @MouseTweaksIgnore
 class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContainerQuickerCrafting(playerInv)) {
     companion object {
