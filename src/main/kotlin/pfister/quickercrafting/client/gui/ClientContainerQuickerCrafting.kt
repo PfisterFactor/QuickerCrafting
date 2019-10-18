@@ -36,7 +36,7 @@ class ClientSlot(inv:IInventory, index:Int, xPos:Int, yPos:Int): NoDragSlot(inv,
 
 @SideOnly(Side.CLIENT)
 class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuickerCrafting(true, playerInv) {
-    val RecipeCalculator: RecipeCalculator = RecipeCalculator(this)
+    val RecipeCalc: RecipeCalculator = RecipeCalculator(this)
     val ClientSlotsStart: Int = inventorySlots.size
 
     // Stores all the recipes
@@ -82,7 +82,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 slot.Recipes = null
                 slot.RecipeIndex = 0
             }
-            if (slot.State != SlotState.DISABLED && recipes == slotUnderMouse?.Recipes) {
+            if (slot.State != SlotState.DISABLED && !forceRefresh && recipes == slotUnderMouse?.Recipes) {
                 slot.State = SlotState.EMPTY
             }
         }
@@ -123,18 +123,26 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         // If any changes were made to the inventory at all
         var updateRecipes = false
         for (i in 0 until ClientSlotsStart) {
-            val itemstack = this.inventorySlots[i].stack
-            var itemstack1 = this.inventoryItemStacks[i]
+            val after = this.inventorySlots[i].stack
+            val before = this.inventoryItemStacks[i]
 
-            if (!ItemStack.areItemStacksEqual(itemstack, itemstack1)) {
-                val stackChanged = !ItemStack.areItemStacksEqualUsingNBTShareTag(itemstack1, itemstack)
-                itemstack1 = if (itemstack.isEmpty) ItemStack.EMPTY else itemstack.copy()
+            val beforeIsNonIngredient by lazy { RecipeCalculator.NonIngredientItems.contains(before.item) }
+            val afterIsNonIngredient by lazy { RecipeCalculator.NonIngredientItems.contains(after.item) }
 
-                this.inventoryItemStacks[i] = itemstack1
+            val hasAnIngredientChanged = i >= 9 && i != 45 &&
+                    !(beforeIsNonIngredient && after.isEmpty
+                            || before.isEmpty && afterIsNonIngredient
+                            || beforeIsNonIngredient && afterIsNonIngredient
+                            )
+
+            if (!ItemStack.areItemStacksEqual(after, before)) {
+                val stackChanged = !ItemStack.areItemStacksEqualUsingNBTShareTag(before, after)
+
+                this.inventoryItemStacks[i] = if (after.isEmpty) ItemStack.EMPTY else after.copy()
 
                 if (stackChanged) {
-                    listeners.forEach { it.sendSlotContents(this, i, itemstack1) }
-                    if (i >= 9 && i != 45) {
+                    listeners.forEach { it.sendSlotContents(this, i, before) }
+                    if (hasAnIngredientChanged) {
                         updateRecipes = true
                     }
 
@@ -144,7 +152,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         // Regenerate the possible craftable recipes if any changes were made to the inventory
         if (updateRecipes) {
             searchTree = SearchTree()
-            RecipeCalculator.populateRecipeList(craftableRecipes) {
+            RecipeCalc.populateRecipeList(craftableRecipes) {
                 if (it == null) {
                     isPopulating = false
                     checkScrollbar()

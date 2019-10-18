@@ -1,5 +1,6 @@
 package pfister.quickercrafting.common.util
 
+import net.minecraft.init.Items
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
@@ -17,7 +18,8 @@ typealias RecipeList = ArrayList<IRecipe>
 //
 class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     companion object {
-        val SortedRecipes: Map<Item, RecipeList> = run {
+        // All the recipes that we can craft sorted according to how their items would appear in the search tab in creative
+        val SortedRecipes: Map<Item, RecipeList> by lazy {
             val items = Item.REGISTRY
             ArrayList(ForgeRegistries.RECIPES.valuesCollection
                     .filter { (it as IRecipe).ingredients.isNotEmpty() }
@@ -26,6 +28,21 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
                         val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
                         return@Comparator r1 - r2
                     })).fold(mapOf<Item, RecipeList>()) { acc, r -> acc + Pair(r.recipeOutput.item, acc.getOrDefault(r.recipeOutput.item, RecipeList()).plus(r) as RecipeList) }
+        }
+
+        // Finds all the items that aren't used in any recipes
+        // Don't even try to tell me the big O notation of this
+        val NonIngredientItems: Set<Item> by lazy {
+            val items = Item.REGISTRY
+            items.filterNot { item ->
+                ForgeRegistries.RECIPES.valuesCollection.any { recipe ->
+                    recipe.ingredients.any { ingr ->
+                        ingr.matchingStacks.any { stack ->
+                            stack.item == item
+                        }
+                    }
+                }
+            }.without(Items.AIR).toSet()
         }
     }
 
@@ -46,6 +63,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     // Attempts to craft a recipe using the players inventory
     // If success, returns a list of indexes to the passed in item list corresponding to ingredients used and amount used
     // If failure, returns None
+    // Todo: Make this more efficent
     fun doCraft(inventory: List<ItemStack>, recipe: IRecipe): CraftingInfo {
         // A map of all the items and their amounts used in the recipe
         val usedItemMap: MutableMap<Int, Int> = mutableMapOf()
@@ -57,6 +75,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
                     var index = -1
                     for (i in inventory.indices) {
                         val itemstack = inventory[i]
+                        if (itemstack.isEmpty || NonIngredientItems.contains(itemstack.item)) continue
                         if (itemstack.count > 0 && ingr.apply(itemstack) && itemstack.count - usedItemMap.getOrDefault(i,0) > 0) {
                             index = i
                             break

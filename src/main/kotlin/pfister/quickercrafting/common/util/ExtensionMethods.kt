@@ -66,7 +66,7 @@ fun <E> List<E>.without(vararg elems: E): List<E> {
 }
 
 fun <E> List<E>.without(vararg indexes: Int): List<E> {
-    return foldIndexed(listOf()) { i, acc, elem ->
+    return foldIndexed(this.javaClass.newInstance()) { i, acc, elem ->
         if (!indexes.contains(i)) {
             acc + elem
         } else {

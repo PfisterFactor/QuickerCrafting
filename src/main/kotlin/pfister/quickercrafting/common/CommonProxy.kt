@@ -19,7 +19,7 @@ import kotlin.system.measureTimeMillis
 
 // Handles initialization functionality common to client and server
 open class CommonProxy {
-    // Our thread that loads the RecipeCalculator object, and by extension evaluates the SortedRecipes variable
+    // Our thread that loads the RecipeCalc object, and by extension evaluates the SortedRecipes variable
     // That computation is expensive when the recipe registry is very big (i.e. modpacks), so we offload it to another thread while loading
     // If it still is sorting by load completion, we just wait for it to be done
     var sorting_thread: Thread? = null
@@ -37,7 +37,9 @@ open class CommonProxy {
         // Start the sorting thread
         sorting_thread = thread {
             val ms = measureTimeMillis { RecipeCalculator.SortedRecipes }
+            val ms2 = measureTimeMillis { RecipeCalculator.NonIngredientItems }
             LOG.info("Sorting Recipes took ${ms}ms.")
+            LOG.info("Finding non-ingredient items took ${ms2}ms.")
         }
     }
 

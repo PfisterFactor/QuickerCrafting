@@ -287,7 +287,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         if (slotUnderMouse != null && slotUnderMouse
                         is ClientSlot) {
             val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipes?.get((slotUnderMouse as ClientSlot).RecipeIndex)
-            val itemMap: Map<Int, Int>? = if (recipe != null) (inventorySlots as ClientContainerQuickerCrafting).RecipeCalculator.doCraft(inventorySlots.inventory, recipe).ItemMap else null
+            val itemMap: Map<Int, Int>? = if (recipe != null) (inventorySlots as ClientContainerQuickerCrafting).RecipeCalc.doCraft(inventorySlots.inventory, recipe).ItemMap else null
             hoveredRecipeAndItemMap = if (itemMap != null) Pair(recipe!!,itemMap) else null
         } else
             hoveredRecipeAndItemMap = null
