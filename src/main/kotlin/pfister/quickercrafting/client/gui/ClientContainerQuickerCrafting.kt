@@ -66,9 +66,10 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         val length = displayedRecipes.count()
         val rows = (length + 8) / 9 - 3
         slotRowYOffset = ((currentScroll * rows.toDouble()) + 0.5).toInt()
+
         fun updateSlot(slot: ClientSlot) {
             val recipes = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
-            if (recipes != null && (recipes != slotUnderMouse?.Recipes || forceRefresh)) {
+            if (recipes != null) {
                 slot.putStack(recipes[slot.RecipeIndex].recipeOutput)
                 slot.State = SlotState.ENABLED
                 slot.Recipes = recipes
@@ -77,6 +78,9 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 slot.State = SlotState.DISABLED
                 slot.Recipes = null
                 slot.RecipeIndex = 0
+            }
+            if (recipes == slotUnderMouse?.Recipes) {
+                slot.State = SlotState.EMPTY
             }
         }
 
