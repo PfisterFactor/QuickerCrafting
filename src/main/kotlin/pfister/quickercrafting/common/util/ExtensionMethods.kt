@@ -4,6 +4,7 @@ import net.minecraft.inventory.InventoryBasic
 import net.minecraft.item.ItemStack
 import kotlin.math.min
 
+// Returns true if two itemstacks can stack
 fun ItemStack.canStack(other: ItemStack): Boolean {
     return !this.isEmpty &&
             !other.isEmpty &&
@@ -14,6 +15,9 @@ fun ItemStack.canStack(other: ItemStack): Boolean {
             other.count + this.count <= other.maxStackSize
 }
 
+// Attempts to add an itemstack to an inventory
+// The returning itemstack is whats left after we cram as much as possible into the inventory
+// Doesn't mutate the argument
 fun InventoryBasic.condensedAdd(itemStackToAdd: ItemStack): ItemStack {
     val copied = itemStackToAdd.copy()
     val size = this.sizeInventory

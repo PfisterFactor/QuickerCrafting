@@ -17,21 +17,30 @@ import pfister.quickercrafting.common.util.RecipeCalculator
 import kotlin.concurrent.thread
 import kotlin.system.measureTimeMillis
 
+// Handles initialization functionality common to client and server
 open class CommonProxy {
-    var running_thread: Thread? = null
+    // Our thread that loads the RecipeCalculator object, and by extension evaluates the SortedRecipes variable
+    // That computation is expensive when the recipe registry is very big (i.e. modpacks), so we offload it to another thread while loading
+    // If it still is sorting by load completion, we just wait for it to be done
+    var sorting_thread: Thread? = null
 
     @Mod.EventHandler
     open fun preInit(event: FMLPreInitializationEvent) {
+        // Register our network packets with forge
         PacketHandler.registerMessages()
     }
+
     @Mod.EventHandler
     open fun init(event: FMLInitializationEvent) {
+        // Register our gui handlers with forge
         NetworkRegistry.INSTANCE.registerGuiHandler(QuickerCrafting, GuiHandler)
-        running_thread = thread {
+        // Start the sorting thread
+        sorting_thread = thread {
             val ms = measureTimeMillis { RecipeCalculator.SortedRecipes }
             LOG.info("Sorting Recipes took ${ms}ms.")
         }
     }
+
     @Mod.EventHandler
     open fun postInit(event: FMLPostInitializationEvent) {
 
@@ -40,7 +49,7 @@ open class CommonProxy {
     @Mod.EventHandler
     open fun finishSorting(event: FMLLoadCompleteEvent) {
         // If we're still sorting recipes, just wait until its done
-        running_thread?.join()
+        sorting_thread?.join()
     }
 
 }
@@ -51,6 +60,7 @@ object CommonEventListener {
     @JvmStatic
     @SubscribeEvent
     fun registerItems(event: RegistryEvent.Register<Item>) {
+        // Register our one item with forge
         event.registry.register(ItemGuiTester())
     }
 

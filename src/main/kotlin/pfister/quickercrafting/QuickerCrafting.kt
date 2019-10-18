@@ -8,16 +8,23 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 import org.apache.logging.log4j.Logger
 import pfister.quickercrafting.common.CommonProxy
 
+// Some constants related to forge
 const val MOD_ID = "quickercrafting"
 const val MOD_NAME = "Quicker Crafting"
 const val VERSION = "0.1"
+//
+
+// Our logger <3
 lateinit var LOG: Logger
+
 
 @Mod(modid = MOD_ID, name = MOD_NAME, version = VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "after:inventorytweaks;after:mousetweaks;")
 object QuickerCrafting {
     @SidedProxy(
             clientSide = "pfister.quickercrafting.client.ClientProxy",
             serverSide = "pfister.quickercrafting.common.CommonProxy")
+
+    // Reference to our proxy
     private lateinit var proxy: CommonProxy
 
     @Mod.EventHandler

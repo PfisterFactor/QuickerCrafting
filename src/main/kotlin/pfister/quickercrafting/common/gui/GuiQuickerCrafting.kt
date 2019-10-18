@@ -48,7 +48,6 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
             val gui = Minecraft.getMinecraft().currentScreen as GuiQuickerCrafting
 
             if (gui.hoveredRecipeAndItemMap == null) return
-            val recipe = gui.hoveredRecipeAndItemMap!!.first
             val itemMap = gui.hoveredRecipeAndItemMap!!.second
 
             val packedItemsAndCounts =
