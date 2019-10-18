@@ -1,6 +1,5 @@
 package pfister.quickercrafting.common.gui
 
-import invtweaks.api.container.IgnoreContainer
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.ContainerPlayer
@@ -16,7 +15,6 @@ open class NoDragSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : Slot(
 }
 
 
-@IgnoreContainer
 open class ContainerQuickerCrafting(localWorld: Boolean = false, val PlayerInv: InventoryPlayer) : ContainerPlayer(PlayerInv, localWorld, PlayerInv.player) {
     val quickCraftResult = InventoryBasic("", false, 3)
     init {
@@ -34,20 +32,27 @@ open class ContainerQuickerCrafting(localWorld: Boolean = false, val PlayerInv: 
         }
     }
 
-    fun canFitStackInCraftResult(stack:ItemStack): Boolean {
-        val workingStack = stack.copy()
-        for (i in 0 until quickCraftResult.sizeInventory) {
-            val item = quickCraftResult.getStackInSlot(i)
-            if (item.isEmpty)
-                return true
-            else if (ItemStack.areItemsEqual(workingStack, item)) {
-                if (item.count + workingStack.count <= item.maxStackSize)
-                    return true
-                else
-                    workingStack.count = workingStack.count - (item.maxStackSize - item.count)
+    fun canFitStacksInCraftResult(stacks: List<ItemStack>): Boolean {
+        if (stacks.isEmpty()) return true
+        val slotStacks: Array<ItemStack> = Array(quickCraftResult.sizeInventory) { quickCraftResult.getStackInSlot(it).copy() }
+        val workingStacks: MutableList<ItemStack> = stacks.map { it.copy() }.toMutableList()
+        slotStacks.any { slotStack ->
+            if (slotStack.isEmpty) {
+                workingStacks.removeAt(0)
+            } else {
+                val otherStack = workingStacks.find { ItemStack.areItemsEqual(slotStack, it) }
+                if (otherStack != null) {
+                    if (slotStack.count + otherStack.count <= slotStack.maxStackSize) {
+                        workingStacks.remove(otherStack)
+                    } else {
+                        otherStack.count -= slotStack.maxStackSize - slotStack.count
+                    }
+                }
             }
+            workingStacks.isEmpty()
         }
-        return false
+        return workingStacks.isEmpty() || workingStacks.all { it.count == 0 }
+
     }
 
     fun isCraftResultIndex(index:Int): Boolean {

@@ -1,26 +1,60 @@
 package pfister.quickercrafting.common.util
 
+import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.inventory.Container
+import net.minecraft.inventory.InventoryCrafting
+import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
+import net.minecraft.item.crafting.Ingredient
 import pfister.quickercrafting.LOG
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 
 // Handles the functionality for crafting something
 object CraftHandler {
+    // Attempts to put the item map into a crafting matrix and get the result that way
+    // Respects items that are reused, like buckets or something
+    // If it fails it just uses recipeOutput
+    fun getRecipeOutput(container: ContainerQuickerCrafting, info: RecipeCalculator.CraftingInfo, recipe: IRecipe): List<ItemStack> {
+        // A fake crafting matrix to pass to the recipe
+        val fakeCraftingInv = InventoryCrafting(object : Container() {
+            override fun canInteractWith(playerIn: EntityPlayer): Boolean = true
+        }, 3, 3)
+
+        // Populate the crafting matrix according to their indexes in the ingredients list within IRecipe
+        recipe.ingredients.forEachIndexed { index, ingredient ->
+            if (ingredient != Ingredient.EMPTY) {
+                val containerIndex = info.ItemMap.keys.find { ingredient.apply(container.getSlot(it).stack) }
+                        ?: return listOf(recipe.recipeOutput)
+                val stack = container.getSlot(containerIndex).stack.copy()
+                stack.count = 1
+                fakeCraftingInv.setInventorySlotContents(index, stack)
+            }
+        }
+        return if (recipe.matches(fakeCraftingInv, container.PlayerInv.player.world)) {
+            listOf(recipe.getCraftingResult(fakeCraftingInv)) + recipe.getRemainingItems(fakeCraftingInv).filterNot { it.isEmpty }
+        } else
+            listOf(recipe.recipeOutput)
+    }
     // Attempts to craft a recipe given the items within the container
+    // The shift argument will recursively try to craft the recipe until we run out of ingredients or the  crafting inventory fills up
     fun tryCraftRecipe(container: ContainerQuickerCrafting, recipe: IRecipe, shift: Boolean = false): Boolean {
         val recipeCalculator = RecipeCalculator(container)
         val isServer = !container.PlayerInv.player.world.isRemote
         // Get a map of items used and how much are used
         val itemsToRemove: RecipeCalculator.CraftingInfo = recipeCalculator.doCraft(container.inventory, recipe)
         if (!itemsToRemove.canCraft()) {
+            // If we can't craft any more on the server, and we aren't shift crafting this recipe, display a warning
             if (isServer && !shift)
                 LOG.warn("MessageCraftItemHandler: Recipes '${recipe.registryName.toString()}' cannot be crafted from ${container.PlayerInv.player.displayNameString}'s inventory on server.")
             return false
         }
-        if (!container.canFitStackInCraftResult(recipe.recipeOutput)) {
+        // Get the output from a simulated matrix, if supported, or just the regular old recipeOutput
+        val output = getRecipeOutput(container, itemsToRemove, recipe)
+        // Make sure we can fit the craft result and any remaining items in the matrix into the crafting window
+        if (!container.canFitStacksInCraftResult(output)) {
             // Detect to see if after crafting there will be an open slot in the craft result slots, if there is we can put the item there
             val willCraftResultItemBeConsumed = itemsToRemove.ItemMap.entries.any { (key: Int, value: Int) ->
-                container.isCraftResultIndex(key) && container.getSlot(value).stack.count <= value
+                container.isCraftResultIndex(key) && container.getSlot(value).stack.count <= value && output.size == 1
             }
             if (!willCraftResultItemBeConsumed) {
                 if (isServer && !shift)
@@ -34,12 +68,13 @@ object CraftHandler {
             slot.decrStackSize(value)
         }
 
-        // Get the recipe output itemstack
-        // Todo: This will not work on special recipes (Repairing, Cloning Books, Fireworks, etc...)
-        val recipeOutput = recipe.recipeOutput.copy()
-        val leftOver = container.quickCraftResult.condensedAdd(recipeOutput)
-        if (!leftOver.isEmpty) {
-            container.PlayerInv.player.dropItem(recipeOutput, false)
+        // Get the recipe output itemstacks
+        val leftOvers: List<ItemStack> = output.fold(listOf()) { acc, i -> acc + container.quickCraftResult.condensedAdd(i) }
+
+        leftOvers.forEach {
+            if (it.isEmpty) {
+                container.PlayerInv.player.dropItem(it, false)
+            }
         }
         if (shift) {
             tryCraftRecipe(container, recipe, true)

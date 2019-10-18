@@ -1,6 +1,5 @@
 package pfister.quickercrafting.common.util
 
-import net.minecraft.client.util.RecipeItemHelper
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
@@ -9,10 +8,13 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import kotlin.concurrent.thread
 
+// Some fun type aliases to improve readability
 typealias Amount = Int
 typealias Index = Int
 
 typealias RecipeList = ArrayList<IRecipe>
+
+//
 class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     companion object {
         val SortedRecipes: Map<Item, RecipeList> = run {
@@ -29,7 +31,6 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
 
     data class CraftingInfo(val Recipe: IRecipe, val ItemMap: Map<Index, Amount>, val Missing: List<Ingredient>) {
         fun canCraft(): Boolean = Missing.isEmpty() && ItemMap.isNotEmpty()
-
     }
 
     class CraftPath(initialCapacity: Int = 0) : ArrayList<CraftingInfo>(initialCapacity) {
@@ -71,16 +72,11 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
         return CraftingInfo(recipe, usedItemMap.toMap(), missing)
     }
 
-    fun doCraft2(inventory: List<ItemStack>, recipe: IRecipe): CraftingInfo {
-        val recipeItemHelper = RecipeItemHelper()
-        inventory.forEach { recipeItemHelper.accountStack(it) }
-        val test = recipeItemHelper.canCraft(recipe, null)
-        println(test)
-        return CraftingInfo(recipe, mapOf(), listOf())
-    }
-
     // Determines if the inventory can craft a recipe
-    fun canCraft(recipe: IRecipe): Boolean = doCraft(Container.inventory, recipe).canCraft()
+    fun canCraft(recipe: IRecipe): Boolean {
+        val result = doCraft(Container.inventory, recipe).canCraft()
+        return result
+    }
 
     private var running_thread: Thread? = null
     fun populateRecipeList(list: MutableList<RecipeList>) {
