@@ -20,7 +20,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
         val SortedRecipes: Map<Item, RecipeList> = run {
             val items = Item.REGISTRY
             ArrayList(ForgeRegistries.RECIPES.valuesCollection
-                    .filter { !it.isDynamic && (it as IRecipe).ingredients.size >= 1 }
+                    .filter { (it as IRecipe).ingredients.isNotEmpty() }
                     .sortedWith(Comparator { recipe1, recipe2 ->
                         val r1 = items.indexOfFirst { recipe1.recipeOutput.item == it }
                         val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
@@ -74,17 +74,23 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
 
     // Determines if the inventory can craft a recipe
     fun canCraft(recipe: IRecipe): Boolean {
-        val result = doCraft(Container.inventory, recipe).canCraft()
-        return result
+        return doCraft(Container.inventory, recipe).canCraft()
     }
 
     private var running_thread: Thread? = null
     fun populateRecipeList(list: MutableList<RecipeList>) {
+        // Tell the thread to stop if its running
         running_thread?.interrupt()
+        // Wait for the thread to die
+        running_thread?.join()
         running_thread = thread(isDaemon = true) {
-            val intermediate = SortedRecipes.values.map { it.filter { canCraft(it) } as RecipeList }.filter { it.isNotEmpty() }
             list.clear()
-            list.addAll(intermediate)
+            SortedRecipes.values.forEach { recipeList ->
+                val newRecipelist = recipeList.filter { canCraft(it) }
+                if (newRecipelist.isNotEmpty()) {
+                    list.add(newRecipelist as RecipeList)
+                }
+            }
         }
     }
 }
