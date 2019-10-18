@@ -113,6 +113,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             }
             ignoreExemption = true
             currentSearchQuery = query
+            checkScrollbar()
         }
         else {
             displayedRecipes = craftableRecipes
