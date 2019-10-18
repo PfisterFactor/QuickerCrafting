@@ -41,8 +41,10 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     val recipeInventory = InventoryBasic("",false, 27)
     var shouldDisplayScrollbar = false
     private var slotRowYOffset = 0
+    // This list is asynchronously populated, so don't check its size or something synchronously
     var craftableRecipes: MutableList<RecipeList> = mutableListOf()
 
+    // The recipes that match our search query, if the search is empty its the same as craftableRecipes
     private var displayedRecipes: List<RecipeList> = craftableRecipes
     var currentSearchQuery: String = ""
     var ignoreExemption: Boolean = false
@@ -55,37 +57,46 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         }
     }
 
-    fun updateDisplay(currentScroll:Double, exemptSlotIndex:Int) {
+    // Called after populate recipes is done. So we don't reset the scrollbar after every crafting because craftableRecipes isn't fully populated.
+    fun checkScrollbar() {
+        shouldDisplayScrollbar = displayedRecipes.count() > inventorySlots.size - ClientSlotsStart
+    }
+
+    fun updateDisplay(currentScroll: Double, slotUnderMouse: ClientSlot?, forceRefresh: Boolean = false) {
         val length = displayedRecipes.count()
         val rows = (length + 8) / 9 - 3
         slotRowYOffset = ((currentScroll * rows.toDouble()) + 0.5).toInt()
-        shouldDisplayScrollbar = length > inventorySlots.size - ClientSlotsStart
+        fun updateSlot(slot: ClientSlot) {
+            val recipes = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
+            if (recipes != null && (recipes != slotUnderMouse?.Recipes || forceRefresh)) {
+                slot.putStack(recipes[slot.RecipeIndex].recipeOutput)
+                slot.State = SlotState.ENABLED
+                slot.Recipes = recipes
+            } else {
+                slot.putStack(ItemStack.EMPTY)
+                slot.State = SlotState.DISABLED
+                slot.Recipes = null
+                slot.RecipeIndex = 0
+            }
+        }
+
         inventorySlots
                 .drop(ClientSlotsStart)
-                .filterNot { it.slotNumber == exemptSlotIndex && !ignoreExemption }
                 .map { it as ClientSlot}
                 .forEach { slot ->
-                    val recipes = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
-                    if (recipes != null) {
-                        slot.putStack(recipes[slot.RecipeIndex].recipeOutput)
-                        slot.State = SlotState.ENABLED
-                        slot.Recipes = recipes
-                    } else {
-                        slot.putStack(ItemStack.EMPTY)
-                        slot.State = SlotState.DISABLED
-                        slot.Recipes = null
-                        slot.RecipeIndex = 0
+                    if (!forceRefresh && slotUnderMouse == slot) {
+                        return@forEach
                     }
+                    updateSlot(slot)
                 }
-        val exemptSlot: ClientSlot? =
-                if (!ignoreExemption && exemptSlotIndex != -1 && exemptSlotIndex >= ClientSlotsStart)
-            getSlot(exemptSlotIndex) as ClientSlot
-        else
-            null
+        if (slotUnderMouse != null && slotUnderMouse.State != SlotState.DISABLED) {
+            if (!craftableRecipes.contains(slotUnderMouse.Recipes)) {
+                slotUnderMouse.State = SlotState.EMPTY
+            } else {
+                slotUnderMouse.State = SlotState.ENABLED
+            }
+        }
 
-        if (!ignoreExemption && exemptSlot != null && exemptSlot.State != SlotState.DISABLED && exemptSlot.Recipes != null && !craftableRecipes.contains(exemptSlot.Recipes!!))
-            exemptSlot.State = SlotState.EMPTY
-        ignoreExemption = false
 
     }
 
@@ -129,10 +140,9 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             }
         // Regenerate the possible craftable recipes if any changes were made to the inventory
         if (stackChangedFlag) {
-            RecipeCalculator.populateRecipeList(craftableRecipes)
+            RecipeCalculator.populateRecipeList(craftableRecipes) { checkScrollbar() }
             displayedRecipes = craftableRecipes
             handleSearch(currentSearchQuery)
-
 
         }
 

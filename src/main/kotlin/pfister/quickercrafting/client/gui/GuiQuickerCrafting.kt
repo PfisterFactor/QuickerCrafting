@@ -1,4 +1,4 @@
-package pfister.quickercrafting.common.gui
+package pfister.quickercrafting.client.gui
 
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Gui
@@ -23,10 +23,7 @@ import net.minecraftforge.fml.relauncher.Side
 import org.lwjgl.input.Keyboard
 import org.lwjgl.input.Mouse
 import pfister.quickercrafting.MOD_ID
-import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
-import pfister.quickercrafting.client.gui.ClientSlot
-import pfister.quickercrafting.client.gui.GuiScrollBar
-import pfister.quickercrafting.client.gui.SlotState
+import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.network.MessageCraftItem
 import pfister.quickercrafting.common.network.PacketHandler
 import pfister.quickercrafting.common.util.CraftHandler
@@ -271,9 +268,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
     // Draws the buttons and stuff on top of the background
     override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
-        var hoveredSlotIndex = if (slotUnderMouse != null) slotUnderMouse!!.slotNumber else -1
-        if (Scrollbar.isScrolling) hoveredSlotIndex = -1
-        (inventorySlots as ClientContainerQuickerCrafting).updateDisplay(Scrollbar.currentScroll, hoveredSlotIndex)
+        val hoveredSlot = slotUnderMouse as? ClientSlot
+        (inventorySlots as ClientContainerQuickerCrafting).updateDisplay(Scrollbar.currentScroll, hoveredSlot, Scrollbar.isScrolling)
         Scrollbar.isEnabled = (inventorySlots as ClientContainerQuickerCrafting).shouldDisplayScrollbar
         drawDefaultBackground()
         val isClicking: Boolean = Mouse.isButtonDown(0)

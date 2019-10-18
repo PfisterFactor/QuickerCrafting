@@ -78,7 +78,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     }
 
     private var running_thread: Thread? = null
-    fun populateRecipeList(list: MutableList<RecipeList>) {
+    fun populateRecipeList(list: MutableList<RecipeList>, callback: () -> Unit = {}) {
         // Tell the thread to stop if its running
         running_thread?.interrupt()
         // Wait for the thread to die
@@ -91,6 +91,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
                     list.add(newRecipelist as RecipeList)
                 }
             }
+            callback()
         }
     }
 }
