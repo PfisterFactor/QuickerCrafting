@@ -182,7 +182,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
     override fun handleMouseClick(slotIn: Slot?, slotId: Int, mouseButton: Int, type: ClickType) {
         if (slotId < (inventorySlots as ClientContainerQuickerCrafting).ClientSlotsStart)
             super.handleMouseClick(slotIn, slotId, mouseButton, type)
-        else if (hoveredRecipeAndItemMap != null && mouseButton == 0 && type != ClickType.THROW) {
+        else if (hoveredRecipeAndItemMap != null && mouseButton == 0 && type != ClickType.THROW && Minecraft.getMinecraft().player.inventory.itemStack.isEmpty) {
             if (CraftHandler.tryCraftRecipe(this.inventorySlots as ContainerQuickerCrafting, hoveredRecipeAndItemMap!!.first, type == ClickType.QUICK_MOVE))
                 PacketHandler.INSTANCE.sendToServer(MessageCraftItem(hoveredRecipeAndItemMap!!.first, type == ClickType.QUICK_MOVE))
         }
