@@ -14,12 +14,14 @@ import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.gui.NoDragSlot
 import pfister.quickercrafting.common.util.RecipeCalculator
 import pfister.quickercrafting.common.util.RecipeList
+import pfister.quickercrafting.common.util.SearchTree
 import java.util.*
 
 
 enum class SlotState {
     ENABLED,
     DISABLED,
+    POPULATING,
     EMPTY
 }
 
@@ -44,11 +46,12 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     // This list is asynchronously populated, so don't check its size or something synchronously
     var craftableRecipes: MutableList<RecipeList> = mutableListOf()
 
+    // Suffix tree used for searching -- courtesy of JEI
+    var searchTree: SearchTree = SearchTree()
     // The recipes that match our search query, if the search is empty its the same as craftableRecipes
     private var displayedRecipes: List<RecipeList> = craftableRecipes
     var currentSearchQuery: String = ""
-    var ignoreExemption: Boolean = false
-
+    var isPopulating: Boolean = false
     init {
         for (y in 0 until 3) {
             for (x in 0 until 9) {
@@ -75,11 +78,11 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 slot.Recipes = recipes
             } else {
                 slot.putStack(ItemStack.EMPTY)
-                slot.State = SlotState.DISABLED
+                slot.State = if (isPopulating) SlotState.POPULATING else SlotState.DISABLED
                 slot.Recipes = null
                 slot.RecipeIndex = 0
             }
-            if (recipes == slotUnderMouse?.Recipes) {
+            if (slot.State != SlotState.DISABLED && recipes == slotUnderMouse?.Recipes) {
                 slot.State = SlotState.EMPTY
             }
         }
@@ -106,16 +109,8 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
     fun handleSearch(query: String) {
         if (query.isNotBlank()) {
-            displayedRecipes = craftableRecipes.filter {
-                val tooltip = it.first().recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL)
-                for (line in tooltip) {
-                    if (TextFormatting.getTextWithoutFormattingCodes(line)!!.toLowerCase(Locale.ROOT).contains(query, true)) {
-                        return@filter true
-                    }
-                }
-                return@filter false
-            }
-            ignoreExemption = true
+            val craftableRecipesIndexes = searchTree.search(query).fold(setOf<Int>()) { acc, i -> acc + searchTree.getGroupingIndex(i) }
+            displayedRecipes = craftableRecipesIndexes.map { craftableRecipes[it] }
             currentSearchQuery = query
             checkScrollbar()
         }
@@ -145,12 +140,25 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
                 }
             }
-            }
+        }
         // Regenerate the possible craftable recipes if any changes were made to the inventory
         if (updateRecipes) {
-            RecipeCalculator.populateRecipeList(craftableRecipes) { checkScrollbar() }
+            searchTree = SearchTree()
+            RecipeCalculator.populateRecipeList(craftableRecipes) {
+                if (it == null) {
+                    isPopulating = false
+                    checkScrollbar()
+                    handleSearch(currentSearchQuery)
+                } else {
+                    isPopulating = true
+                    searchTree.putGrouping(*(it.first().recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
+                        TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
+                    }.toTypedArray()))
+
+                }
+
+            }
             displayedRecipes = craftableRecipes
-            handleSearch(currentSearchQuery)
 
         }
     }

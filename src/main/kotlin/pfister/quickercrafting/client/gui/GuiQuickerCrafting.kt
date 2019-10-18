@@ -235,12 +235,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         // Bind the GUI texture
         this.mc.textureManager.bindTexture(TEXTURE)
         Gui.drawModalRectWithCustomSizedTexture(this.guiLeft, this.guiTop, 0f, 0f, this.xSize, this.ySize, 512f, 256f)
-//        this.drawTexturedModalRect(this.guiLeft
-//                this.guiTop,
-//                0,
-//                0,
-//                this.xSize,
-//                this.ySize)
+
         GuiInventory.drawEntityOnScreen(this.guiLeft + 51, this.guiTop + 75, 30, this.guiLeft.toFloat() + 51 - mouseX, this.guiTop.toFloat() + 25 - mouseY, Minecraft.getMinecraft().player)
         Searchfield.drawTextBox()
         if (hoveredRecipeAndItemMap != null) {

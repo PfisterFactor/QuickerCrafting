@@ -78,7 +78,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     }
 
     private var running_thread: Thread? = null
-    fun populateRecipeList(list: MutableList<RecipeList>, callback: () -> Unit = {}) {
+    fun populateRecipeList(list: MutableList<RecipeList>, callback: (RecipeList?) -> Unit = {}) {
         // Tell the thread to stop if its running
         running_thread?.interrupt()
         // Wait for the thread to die
@@ -86,12 +86,14 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
         running_thread = thread(isDaemon = true) {
             list.clear()
             SortedRecipes.values.forEach { recipeList ->
-                val newRecipelist = recipeList.filter { canCraft(it) }
+                val newRecipelist = recipeList.filter { canCraft(it) } as RecipeList
                 if (newRecipelist.isNotEmpty()) {
-                    list.add(newRecipelist as RecipeList)
+                    list.add(newRecipelist)
+                    callback(newRecipelist)
                 }
+
             }
-            callback()
+            callback(null)
         }
     }
 }
