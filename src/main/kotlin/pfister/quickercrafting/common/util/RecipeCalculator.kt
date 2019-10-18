@@ -55,7 +55,7 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
                 .forEach { ingr ->
                     // Find an itemstack index where the count is greater than 0 and the ingredient accepts the itemstack for crafting
                     var index = -1
-                    for (i in inventory.size - 1 downTo 0) {
+                    for (i in inventory.indices) {
                         val itemstack = inventory[i]
                         if (itemstack.count > 0 && ingr.apply(itemstack) && itemstack.count - usedItemMap.getOrDefault(i,0) > 0) {
                             index = i
