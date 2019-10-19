@@ -167,7 +167,6 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         Searchfield = GuiTextField(0, fontRenderer, guiLeft + 144, guiTop + 7, 87, 9)
         Searchfield.maxStringLength = 50
         Searchfield.enableBackgroundDrawing = false
-        //Searchfield.visible = false
         Searchfield.setTextColor(16777215)
         Searchfield.isFocused = false
 
@@ -235,7 +234,6 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         // Bind the GUI texture
         this.mc.textureManager.bindTexture(TEXTURE)
         Gui.drawModalRectWithCustomSizedTexture(this.guiLeft, this.guiTop, 0f, 0f, this.xSize, this.ySize, 512f, 256f)
-
         GuiInventory.drawEntityOnScreen(this.guiLeft + 51, this.guiTop + 75, 30, this.guiLeft.toFloat() + 51 - mouseX, this.guiTop.toFloat() + 25 - mouseY, Minecraft.getMinecraft().player)
         Searchfield.drawTextBox()
         if (hoveredRecipeAndItemMap != null) {
@@ -312,7 +310,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         GlStateManager.disableDepth()
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         this.mc.textureManager.bindTexture(TEXTURE)
-        if (Scrollbar.isEnabled)
+        if (Scrollbar.isEnabled || (inventorySlots as ClientContainerQuickerCrafting).isPopulating)
 
             Gui.drawModalRectWithCustomSizedTexture(
                     GuiScrollBar.GUI_POS_X,
@@ -332,7 +330,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
                     GuiScrollBar.TEX_WIDTH,
                     GuiScrollBar.TEX_HEIGHT, 512f, 256f
             )
-            Scrollbar.currentScroll = 0.0
+            if (!(inventorySlots as ClientContainerQuickerCrafting).isPopulating)
+                Scrollbar.currentScroll = 0.0
         }
         GlStateManager.popMatrix()
 

@@ -82,7 +82,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 slot.Recipes = null
                 slot.RecipeIndex = 0
             }
-            if (slot.State != SlotState.DISABLED && !forceRefresh && recipes == slotUnderMouse?.Recipes) {
+            if (slot.State != SlotState.DISABLED && !forceRefresh && !isPopulating && recipes == slotUnderMouse?.Recipes) {
                 slot.State = SlotState.EMPTY
             }
         }
@@ -91,7 +91,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 .drop(ClientSlotsStart)
                 .map { it as ClientSlot}
                 .forEach { slot ->
-                    if (!forceRefresh && slotUnderMouse == slot) {
+                    if (!forceRefresh && slotUnderMouse == slot && slot.hasStack) {
                         return@forEach
                     }
                     updateSlot(slot)
@@ -112,11 +112,11 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             val craftableRecipesIndexes = searchTree.search(query).fold(setOf<Int>()) { acc, i -> acc + searchTree.getGroupingIndex(i) }
             displayedRecipes = craftableRecipesIndexes.map { craftableRecipes[it] }
             currentSearchQuery = query
-            checkScrollbar()
         }
         else {
             displayedRecipes = craftableRecipes
         }
+        checkScrollbar()
     }
     // Only sends changes for the slots shared between server and client
     override fun detectAndSendChanges() {
@@ -155,10 +155,11 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             RecipeCalc.populateRecipeList(craftableRecipes) {
                 if (it == null) {
                     isPopulating = false
-                    checkScrollbar()
                     handleSearch(currentSearchQuery)
+                    checkScrollbar()
                 } else {
                     isPopulating = true
+                    checkScrollbar()
                     searchTree.putGrouping(*(it.first().recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
                         TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
                     }.toTypedArray()))

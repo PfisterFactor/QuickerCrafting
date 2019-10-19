@@ -49,7 +49,7 @@ open class CommonProxy {
     }
 
     @Mod.EventHandler
-    open fun finishSorting(event: FMLLoadCompleteEvent) {
+    open fun loadComplete(event: FMLLoadCompleteEvent) {
         // If we're still sorting recipes, just wait until its done
         sorting_thread?.join()
     }

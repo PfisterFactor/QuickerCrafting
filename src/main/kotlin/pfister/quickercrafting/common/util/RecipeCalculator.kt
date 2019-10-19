@@ -7,10 +7,12 @@ import net.minecraft.item.crafting.IRecipe
 import net.minecraft.item.crafting.Ingredient
 import net.minecraftforge.fml.common.registry.ForgeRegistries
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
+import kotlin.Comparator
 import kotlin.concurrent.thread
 
 // Some fun type aliases to improve readability
 typealias Amount = Int
+
 typealias Index = Int
 
 typealias RecipeList = ArrayList<IRecipe>
@@ -32,9 +34,10 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
 
         // Finds all the items that aren't used in any recipes
         // Don't even try to tell me the big O notation of this
-        val NonIngredientItems: Set<Item> by lazy {
+        val NonIngredientItems: HashSet<Item> by lazy {
             val items = Item.REGISTRY
-            items.filterNot { item ->
+            val set = HashSet<Item>()
+            set.addAll(items.filterNot { item ->
                 ForgeRegistries.RECIPES.valuesCollection.any { recipe ->
                     recipe.ingredients.any { ingr ->
                         ingr.matchingStacks.any { stack ->
@@ -42,7 +45,9 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
                         }
                     }
                 }
-            }.without(Items.AIR).toSet()
+            }.without(Items.AIR))
+            set
+
         }
     }
 
@@ -63,32 +68,33 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
     // Attempts to craft a recipe using the players inventory
     // If success, returns a list of indexes to the passed in item list corresponding to ingredients used and amount used
     // If failure, returns None
-    // Todo: Make this more efficent
     fun doCraft(inventory: List<ItemStack>, recipe: IRecipe): CraftingInfo {
+
         // A map of all the items and their amounts used in the recipe
         val usedItemMap: MutableMap<Int, Int> = mutableMapOf()
-        val missing: MutableList<Ingredient> = mutableListOf()
-        recipe.ingredients
-                .filterNot { it == Ingredient.EMPTY }
-                .forEach { ingr ->
-                    // Find an itemstack index where the count is greater than 0 and the ingredient accepts the itemstack for crafting
-                    var index = -1
-                    for (i in inventory.indices) {
-                        val itemstack = inventory[i]
-                        if (itemstack.isEmpty || NonIngredientItems.contains(itemstack.item)) continue
-                        if (itemstack.count > 0 && ingr.apply(itemstack) && itemstack.count - usedItemMap.getOrDefault(i,0) > 0) {
-                            index = i
-                            break
-                        }
-                    }
-                    if (index != -1) {
-                        usedItemMap[index] = usedItemMap.getOrDefault(index, 0) + 1
-                    } else {
-                        missing.add(ingr)
+        val ingredientsLeft = recipe.ingredients.filterNot { it == Ingredient.EMPTY }.toMutableList()
+
+        for (invIndex: Int in inventory.indices) {
+            if (ingredientsLeft.isEmpty()) break
+
+            val stack = inventory[invIndex]
+            if (stack.isEmpty || NonIngredientItems.contains(stack.item)) continue
+
+            for (ingrIndex: Int in ingredientsLeft.indices.reversed()) {
+                if (ingredientsLeft.isEmpty()) break
+
+                val ingr = ingredientsLeft[ingrIndex]
+                if (ingr.apply(stack)) {
+                    val itemCount = usedItemMap.getOrDefault(invIndex, 0)
+                    if (stack.count - itemCount > 0) {
+                        usedItemMap[invIndex] = itemCount + 1
+                        ingredientsLeft.removeAt(ingrIndex)
                     }
 
                 }
-        return CraftingInfo(recipe, usedItemMap.toMap(), missing)
+            }
+        }
+        return CraftingInfo(recipe, usedItemMap.toMap(), ingredientsLeft)
     }
 
     // Determines if the inventory can craft a recipe
@@ -96,12 +102,12 @@ class RecipeCalculator(val Container: ContainerQuickerCrafting) {
         return doCraft(Container.inventory, recipe).canCraft()
     }
 
-    private var running_thread: Thread? = null
+    private var running_thread: Thread = Thread()
     fun populateRecipeList(list: MutableList<RecipeList>, callback: (RecipeList?) -> Unit = {}) {
         // Tell the thread to stop if its running
-        running_thread?.interrupt()
+        running_thread.interrupt()
         // Wait for the thread to die
-        running_thread?.join()
+        running_thread.join()
         running_thread = thread(isDaemon = true) {
             list.clear()
             SortedRecipes.values.forEach { recipeList ->
