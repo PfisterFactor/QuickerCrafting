@@ -10,6 +10,7 @@ Note: This only changes player crafting, it does not change any autocrafting mac
 - Craft result slots, so you can chain craft easily (i.e. logs -> planks -> sticks)
 - Search all craftable recipes using a similar implementation as JEI
 - Speedy craftable recipes generation on big modpacks with lots of items and recipes
+- Handy tooltips that show you exactly what and how many materials will be used in crafting and what slots it will take from
 
 ## Todo
 - Configuration of features
