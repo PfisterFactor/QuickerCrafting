@@ -15,9 +15,9 @@ Note: This only changes player crafting, it does not change any autocrafting mac
 
 ## Todo
 - Configuration of features
-- Resizable GUI
+- GUI Improvements (resizability, crafting matrix button)
 - Multi-stage crafting (i.e. you can craft stairs directly from logs by logs->planks->stairs)
-- Mod integration (Chisel, more JEI support, etc.)
+- Mod integration and support (Chisel, more JEI support, baubles, mods that change the inventory, etc.)
 
 ## Pictures/Videos
 ![Interface](https://i.imgur.com/nx09yQf.png)
