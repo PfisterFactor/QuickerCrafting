@@ -44,10 +44,11 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
     // Stores all the recipes
     val recipeInventory = InventoryBasic("", false, 27)
-    var shouldDisplayScrollbar = false
-    private var slotRowYOffset = 0
     // Suffix tree used for searching -- courtesy of JEI
     var searchTree: SearchTree = SearchTree()
+    var shouldDisplayScrollbar = false
+    var currentSearchQuery: String = ""
+    var isPopulating: Boolean = false
     // The recipes that match our search query, if the search is empty its the same as craftableRecipes
     private var displayedRecipes: IndexedSet<RecipeList> = IndexedSet(Comparator<RecipeList> { rl1, rl2 ->
         val items = Item.REGISTRY
@@ -55,8 +56,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         val r2 = items.indexOfFirst { rl2.first().recipeOutput.item == it }
         r1 - r2
     })
-    var currentSearchQuery: String = ""
-    var isPopulating: Boolean = false
+    private var slotRowYOffset = 0
 
     init {
         for (y in 0 until 3) {
@@ -151,7 +151,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         }
     }
 
-    fun onRecipesCalculated(recipe: IRecipe?) {
+    private fun onRecipesCalculated(recipe: IRecipe?) {
         if (recipe == null) {
             isPopulating = false
             // Build search tree
