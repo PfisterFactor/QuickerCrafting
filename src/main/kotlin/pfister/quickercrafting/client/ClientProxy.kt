@@ -8,14 +8,17 @@ import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.InputEvent
+import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.relauncher.Side
 import org.lwjgl.input.Keyboard
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.QuickerCrafting
+import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
 import pfister.quickercrafting.common.CommonProxy
 import pfister.quickercrafting.common.item.ModItems
 import pfister.quickercrafting.common.network.MessageOpenGUI
 import pfister.quickercrafting.common.network.PacketHandler
+import pfister.quickercrafting.common.util.RecipeCache
 
 class ClientProxy : CommonProxy() {
 
@@ -44,5 +47,25 @@ object ClientEventListener {
                 player.posX.toInt(),
                 player.posY.toInt(),
                 player.posZ.toInt())
+    }
+
+
+    private var tickCounter = 0
+    @JvmStatic
+    @SubscribeEvent
+    // Updates the recipe cache when the player is not in an inventory so the user doesnt have to wait to populate it
+    // Only happens once per 20 ticks (usually every second)
+    // Todo: Make configurable
+    fun onPlayerTick(event: TickEvent.PlayerTickEvent) {
+        if (event.side == Side.CLIENT && event.phase == TickEvent.Phase.START) {
+            tickCounter += 1
+            if (tickCounter < 20) return
+            tickCounter = 0
+            val player = Minecraft.getMinecraft().player
+            // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
+            if (player.openContainer != null && player.openContainer !is ClientContainerQuickerCrafting) {
+                RecipeCache.updateCache { }
+            }
+        }
     }
 }

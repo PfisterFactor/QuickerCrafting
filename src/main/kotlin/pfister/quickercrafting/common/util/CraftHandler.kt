@@ -38,10 +38,9 @@ object CraftHandler {
     // Attempts to craft a recipe given the items within the container
     // The shift argument will recursively try to craft the recipe until we run out of ingredients or the  crafting inventory fills up
     fun tryCraftRecipe(container: ContainerQuickerCrafting, recipe: IRecipe, shift: Boolean = false): Boolean {
-        val recipeCalculator = RecipeCalculator(container)
         val isServer = !container.PlayerInv.player.world.isRemote
         // Get a map of items used and how much are used
-        val itemsToRemove: RecipeCalculator.CraftingInfo = recipeCalculator.doCraft(container.inventory, recipe)
+        val itemsToRemove: RecipeCalculator.CraftingInfo = RecipeCalculator.doCraft(container.inventory, recipe)
         if (!itemsToRemove.canCraft()) {
             // If we can't craft any more on the server, and we aren't shift crafting this recipe, display a warning
             if (isServer && !shift)

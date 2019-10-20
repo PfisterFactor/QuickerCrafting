@@ -5,7 +5,6 @@ import net.minecraft.client.util.ITooltipFlag
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
-import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
 import net.minecraft.util.NonNullList
@@ -14,10 +13,10 @@ import net.minecraftforge.fml.relauncher.Side
 import net.minecraftforge.fml.relauncher.SideOnly
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.gui.NoDragSlot
-import pfister.quickercrafting.common.util.RecipeCalculator
+import pfister.quickercrafting.common.util.RecipeCache
+import pfister.quickercrafting.common.util.RecipeCache.CraftableRecipes
 import pfister.quickercrafting.common.util.RecipeList
 import pfister.quickercrafting.common.util.SearchTree
-import pfister.quickercrafting.common.util.collection.IndexedSet
 import java.util.*
 
 
@@ -39,25 +38,16 @@ class ClientSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : NoDragSlot
 
 @SideOnly(Side.CLIENT)
 class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuickerCrafting(true, playerInv) {
-    val RecipeCalc: RecipeCalculator = RecipeCalculator(this)
     val ClientSlotsStart: Int = inventorySlots.size
 
     // Stores all the recipes
     val recipeInventory = InventoryBasic("", false, 27)
     var shouldDisplayScrollbar = false
     private var slotRowYOffset = 0
-    // This list is asynchronously populated, so don't check its size or something synchronously
-    var craftableRecipes: IndexedSet<IRecipe> = IndexedSet(Comparator { recipe1, recipe2 ->
-        val items = Item.REGISTRY
-        val r1 = items.indexOfFirst { recipe1.recipeOutput.item == it }
-        val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
-        r1 - r2
-    })
-
     // Suffix tree used for searching -- courtesy of JEI
     var searchTree: SearchTree = SearchTree()
     // The recipes that match our search query, if the search is empty its the same as craftableRecipes
-    private var displayedRecipes: List<RecipeList> = listOf()
+    private var displayedRecipes: List<RecipeList> = CraftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
     var currentSearchQuery: String = ""
     var isPopulating: Boolean = false
 
@@ -67,6 +57,8 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 addSlotToContainer(ClientSlot(recipeInventory, y * 9 + x, 98 + x * 18, 20 + y * 18))
             }
         }
+        // Setup things like the search tree, scroll bar,
+        onRecipesCalculated(null)
     }
 
     // Called after populate recipes is done. So we don't reset the scrollbar after every crafting because craftableRecipes isn't fully populated.
@@ -105,7 +97,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                     updateSlot(slot)
                 }
         if (slotUnderMouse != null && slotUnderMouse.State != SlotState.DISABLED) {
-            if (slotUnderMouse.Recipes?.any { craftableRecipes.contains(it) } == false) {
+            if (slotUnderMouse.Recipes?.any { CraftableRecipes.contains(it) } == false) {
                 slotUnderMouse.State = SlotState.EMPTY
             } else {
                 slotUnderMouse.State = SlotState.ENABLED
@@ -118,17 +110,16 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     fun handleSearch(query: String) {
         if (query.isNotBlank()) {
             val craftableRecipesIndexes = searchTree.search(query).fold(setOf<Int>()) { acc, i -> acc + searchTree.getGroupingIndex(i) }
-            displayedRecipes = craftableRecipesIndexes.map { craftableRecipes[it] }.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
+            displayedRecipes = craftableRecipesIndexes.map { CraftableRecipes[it] }.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
             currentSearchQuery = query
         } else {
-            displayedRecipes = craftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
+            displayedRecipes = CraftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
         }
         checkScrollbar()
     }
 
     // Only sends changes for the slots shared between server and client
     override fun detectAndSendChanges() {
-        val changedStacks: MutableList<ItemStack> = mutableListOf()
         // If any changes were made to the inventory at all
         var updateRecipes = false
         for (i in 0 until ClientSlotsStart) {
@@ -142,39 +133,41 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
                 if (stackChanged) {
                     listeners.forEach { it.sendSlotContents(this, i, before) }
-
-                    if (!before.isEmpty) changedStacks.add(before)
-                    if (!after.isEmpty) changedStacks.add(after)
                     updateRecipes = true
-
-
                 }
             }
         }
         // Regenerate the possible craftable recipes if any changes were made to the inventory
         if (updateRecipes) {
-            searchTree = SearchTree()
-            RecipeCalc.populateRecipeList(craftableRecipes, changedStacks) {
-                if (it == null) {
-                    isPopulating = false
-                    craftableRecipes.forEach {
-                        searchTree.putGrouping(*(it.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
-                            TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
-                        }.toTypedArray()))
-                    }
-                    handleSearch(currentSearchQuery)
-                    checkScrollbar()
-                } else {
-                    isPopulating = true
-                    checkScrollbar()
-                }
-
-            }
-            displayedRecipes = craftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
-
+            RecipeCache.updateCache { onRecipesCalculated(it) }
         }
     }
 
+    fun onRecipesCalculated(recipe: IRecipe?) {
+        if (recipe == null) {
+            isPopulating = false
+            // Build search tree
+            searchTree = SearchTree()
+            CraftableRecipes.forEach {
+                searchTree.putGrouping(*(it.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
+                    TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
+                }.toTypedArray()))
+            }
+
+            // Group recipes with the same output
+            // Todo: Fix sorting
+            displayedRecipes = CraftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
+
+            // Search any query we have
+            handleSearch(currentSearchQuery)
+
+            // Check to see if the scrollbar should be enabled
+            checkScrollbar()
+        } else {
+            isPopulating = true
+            checkScrollbar()
+        }
+    }
     // Get all the slots we craft with
     // Excludes the player inventory's crafting matrix and result, plus the armor slots and offhand slot
     override fun getInventory(): NonNullList<ItemStack> {

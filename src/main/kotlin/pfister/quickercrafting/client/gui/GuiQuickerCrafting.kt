@@ -27,6 +27,8 @@ import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.network.MessageCraftItem
 import pfister.quickercrafting.common.network.PacketHandler
 import pfister.quickercrafting.common.util.CraftHandler
+import pfister.quickercrafting.common.util.RecipeCache
+import pfister.quickercrafting.common.util.RecipeCalculator
 import yalter.mousetweaks.api.MouseTweaksIgnore
 
 
@@ -207,10 +209,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         super.handleMouseInput()
         var i = Mouse.getDWheel()
         if (i != 0 && Scrollbar.isEnabled) {
-            val rows = ((this.inventorySlots
-                    as ClientContainerQuickerCrafting)
-                    .craftableRecipes
-                    .size + 8) / 9
+            val rows = (RecipeCache.CraftableRecipes.size + 8) / 9
             if (i > 0) i = 1
             else if (i < 0) i = -1
             Scrollbar.isScrolling = true
@@ -285,7 +284,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         if (slotUnderMouse != null && slotUnderMouse
                         is ClientSlot) {
             val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipes?.get((slotUnderMouse as ClientSlot).RecipeIndex)
-            val itemMap: Map<Int, Int>? = if (recipe != null) (inventorySlots as ClientContainerQuickerCrafting).RecipeCalc.doCraft(inventorySlots.inventory, recipe).ItemMap else null
+            val itemMap: Map<Int, Int>? = if (recipe != null) RecipeCalculator.doCraft(inventorySlots.inventory, recipe).ItemMap else null
             hoveredRecipeAndItemMap = if (itemMap != null) Pair(recipe!!,itemMap) else null
         } else
             hoveredRecipeAndItemMap = null
