@@ -183,6 +183,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
     override fun updateScreen() {
         super.updateScreen()
         (this.inventorySlots as ClientContainerQuickerCrafting).currentSearchQuery = Searchfield.text
+        Searchfield.updateCursorCounter()
         inventorySlots.detectAndSendChanges()
     }
 
@@ -203,7 +204,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
                 slots.updateDisplay(Scrollbar.currentScroll, null, true)
             } else {
                 when (keyCode) {
-                    Keyboard.KEY_TAB -> Searchfield.isFocused = true
+                    Keyboard.KEY_TAB -> Searchfield.isFocused = !Searchfield.isFocused
                     Keyboard.KEY_E -> Minecraft.getMinecraft().player.closeScreen()
                     else -> super.keyTyped(typedChar, keyCode)
                 }
