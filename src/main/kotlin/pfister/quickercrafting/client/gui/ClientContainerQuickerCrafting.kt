@@ -5,6 +5,7 @@ import net.minecraft.client.util.ITooltipFlag
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
+import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
 import net.minecraft.util.NonNullList
@@ -17,6 +18,7 @@ import pfister.quickercrafting.common.util.RecipeCache
 import pfister.quickercrafting.common.util.RecipeCache.CraftableRecipes
 import pfister.quickercrafting.common.util.RecipeList
 import pfister.quickercrafting.common.util.SearchTree
+import pfister.quickercrafting.common.util.collection.IndexedSet
 import java.util.*
 
 
@@ -47,7 +49,12 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     // Suffix tree used for searching -- courtesy of JEI
     var searchTree: SearchTree = SearchTree()
     // The recipes that match our search query, if the search is empty its the same as craftableRecipes
-    private var displayedRecipes: List<RecipeList> = CraftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
+    private var displayedRecipes: IndexedSet<RecipeList> = IndexedSet(Comparator<RecipeList> { rl1, rl2 ->
+        val items = Item.REGISTRY
+        val r1 = items.indexOfFirst { rl1.first().recipeOutput.item == it }
+        val r2 = items.indexOfFirst { rl2.first().recipeOutput.item == it }
+        r1 - r2
+    })
     var currentSearchQuery: String = ""
     var isPopulating: Boolean = false
 
@@ -108,12 +115,13 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     }
 
     fun handleSearch(query: String) {
+        displayedRecipes.clear()
         if (query.isNotBlank()) {
             val craftableRecipesIndexes = searchTree.search(query).fold(setOf<Int>()) { acc, i -> acc + searchTree.getGroupingIndex(i) }
-            displayedRecipes = craftableRecipesIndexes.map { CraftableRecipes[it] }.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
+            displayedRecipes.addAll(craftableRecipesIndexes.map { CraftableRecipes[it] }.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
             currentSearchQuery = query
         } else {
-            displayedRecipes = CraftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
+            displayedRecipes.addAll(CraftableRecipes.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
         }
         checkScrollbar()
     }
@@ -155,8 +163,8 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             }
 
             // Group recipes with the same output
-            // Todo: Fix sorting
-            displayedRecipes = CraftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
+            displayedRecipes.clear()
+            displayedRecipes.addAll(CraftableRecipes.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
 
             // Search any query we have
             handleSearch(currentSearchQuery)
