@@ -53,7 +53,7 @@ object CraftHandler {
         if (!container.canFitStacksInCraftResult(output)) {
             // Detect to see if after crafting there will be an open slot in the craft result slots, if there is we can put the item there
             val willCraftResultItemBeConsumed = itemsToRemove.ItemMap.entries.any { (key: Int, value: Int) ->
-                container.isCraftResultIndex(key) && container.getSlot(value).stack.count <= value && output.size == 1
+                container.isCraftResultIndex(key) && container.getSlot(key).stack.count <= value && output.size == 1
             }
             if (!willCraftResultItemBeConsumed) {
                 if (isServer && !shift)
