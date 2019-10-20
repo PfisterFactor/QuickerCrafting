@@ -61,13 +61,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
             if (gui.hoveredCraftingInfo == null || gui.hoveredCraftingInfo?.canCraft() == false) return
             val itemMap = gui.hoveredCraftingInfo!!.ItemMap
-
-            val packedItemsAndCounts =
-                    itemMap.entries.fold(mapOf<Int,Int>()) { acc, entry ->
-                        val stackPacked = RecipeItemHelper.pack(Minecraft.getMinecraft().player.openContainer.inventoryItemStacks[entry.key])
-                        acc.plus(Pair(stackPacked, acc.getOrDefault(stackPacked, 0) + entry.value))
-                    }
-
+            val inv = Minecraft.getMinecraft().player.openContainer.inventoryItemStacks
+            val packedItemsAndCounts = itemMap.map { Pair(RecipeItemHelper.pack(inv[it.key]), it.value) }.toMap()
 
             val tooltipX = event.x + event.width + 7
             val tooltipY = event.y
@@ -146,7 +141,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
             var x = 0
             var y = 0
-            packedItemsAndCounts.entries.forEach {pair ->
+            packedItemsAndCounts.forEach { pair ->
                 GlStateManager.pushMatrix()
                 RenderHelper.disableStandardItemLighting()
                 RenderHelper.enableGUIStandardItemLighting()
