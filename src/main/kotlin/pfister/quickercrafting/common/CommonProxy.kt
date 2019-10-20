@@ -13,8 +13,7 @@ import pfister.quickercrafting.QuickerCrafting
 import pfister.quickercrafting.common.gui.GuiHandler
 import pfister.quickercrafting.common.item.ItemGuiTester
 import pfister.quickercrafting.common.network.PacketHandler
-import pfister.quickercrafting.common.util.RecipeCalculator
-import kotlin.concurrent.thread
+import pfister.quickercrafting.common.util.ConstantCollections
 import kotlin.system.measureTimeMillis
 
 // Handles initialization functionality common to client and server
@@ -22,7 +21,7 @@ open class CommonProxy {
     // Our thread that loads the RecipeCalc object, and by extension evaluates the SortedRecipes variable
     // That computation is expensive when the recipe registry is very big (i.e. modpacks), so we offload it to another thread while loading
     // If it still is sorting by load completion, we just wait for it to be done
-    var sorting_thread: Thread? = null
+    var loading_thread: Thread = Thread()
 
     @Mod.EventHandler
     open fun preInit(event: FMLPreInitializationEvent) {
@@ -35,23 +34,22 @@ open class CommonProxy {
         // Register our gui handlers with forge
         NetworkRegistry.INSTANCE.registerGuiHandler(QuickerCrafting, GuiHandler)
         // Start the sorting thread
-        sorting_thread = thread {
-            val ms = measureTimeMillis { RecipeCalculator.SortedRecipes }
-            val ms2 = measureTimeMillis { RecipeCalculator.NonIngredientItems }
-            LOG.info("Sorting Recipes took ${ms}ms.")
-            LOG.info("Finding non-ingredient items took ${ms2}ms.")
-        }
+
     }
 
     @Mod.EventHandler
     open fun postInit(event: FMLPostInitializationEvent) {
 
+        val ms3 = measureTimeMillis { ConstantCollections.ItemsUsedInRecipes }
+        LOG.info("Building ingredient list took ${ms3}ms.")
+        val ms4 = measureTimeMillis { ConstantCollections.PackedItemStackRecipeGraph }
+        LOG.info("Building recipe graph took ${ms4}ms.")
     }
 
     @Mod.EventHandler
     open fun loadComplete(event: FMLLoadCompleteEvent) {
         // If we're still sorting recipes, just wait until its done
-        sorting_thread?.join()
+        loading_thread.join()
     }
 
 }

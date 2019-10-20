@@ -5,7 +5,9 @@ import net.minecraft.client.util.ITooltipFlag
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
+import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
+import net.minecraft.item.crafting.IRecipe
 import net.minecraft.util.NonNullList
 import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.relauncher.Side
@@ -15,6 +17,7 @@ import pfister.quickercrafting.common.gui.NoDragSlot
 import pfister.quickercrafting.common.util.RecipeCalculator
 import pfister.quickercrafting.common.util.RecipeList
 import pfister.quickercrafting.common.util.SearchTree
+import pfister.quickercrafting.common.util.collection.IndexedSet
 import java.util.*
 
 
@@ -26,7 +29,7 @@ enum class SlotState {
 }
 
 @SideOnly(Side.CLIENT)
-class ClientSlot(inv:IInventory, index:Int, xPos:Int, yPos:Int): NoDragSlot(inv,index,xPos, yPos) {
+class ClientSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : NoDragSlot(inv, index, xPos, yPos) {
     var State: SlotState = SlotState.EMPTY
     var Recipes: RecipeList? = null
     var RecipeIndex: Int = 0
@@ -40,18 +43,24 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     val ClientSlotsStart: Int = inventorySlots.size
 
     // Stores all the recipes
-    val recipeInventory = InventoryBasic("",false, 27)
+    val recipeInventory = InventoryBasic("", false, 27)
     var shouldDisplayScrollbar = false
     private var slotRowYOffset = 0
     // This list is asynchronously populated, so don't check its size or something synchronously
-    var craftableRecipes: MutableList<RecipeList> = mutableListOf()
+    var craftableRecipes: IndexedSet<IRecipe> = IndexedSet(Comparator { recipe1, recipe2 ->
+        val items = Item.REGISTRY
+        val r1 = items.indexOfFirst { recipe1.recipeOutput.item == it }
+        val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
+        r1 - r2
+    })
 
     // Suffix tree used for searching -- courtesy of JEI
     var searchTree: SearchTree = SearchTree()
     // The recipes that match our search query, if the search is empty its the same as craftableRecipes
-    private var displayedRecipes: List<RecipeList> = craftableRecipes
+    private var displayedRecipes: List<RecipeList> = listOf()
     var currentSearchQuery: String = ""
     var isPopulating: Boolean = false
+
     init {
         for (y in 0 until 3) {
             for (x in 0 until 9) {
@@ -69,7 +78,6 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         val length = displayedRecipes.count()
         val rows = (length + 8) / 9 - 3
         slotRowYOffset = ((currentScroll * rows.toDouble()) + 0.5).toInt()
-
         fun updateSlot(slot: ClientSlot) {
             val recipes = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
             if (recipes != null) {
@@ -89,7 +97,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
         inventorySlots
                 .drop(ClientSlotsStart)
-                .map { it as ClientSlot}
+                .map { it as ClientSlot }
                 .forEach { slot ->
                     if (!forceRefresh && slotUnderMouse == slot && slot.hasStack) {
                         return@forEach
@@ -97,7 +105,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                     updateSlot(slot)
                 }
         if (slotUnderMouse != null && slotUnderMouse.State != SlotState.DISABLED) {
-            if (!craftableRecipes.contains(slotUnderMouse.Recipes)) {
+            if (slotUnderMouse.Recipes?.any { craftableRecipes.contains(it) } == false) {
                 slotUnderMouse.State = SlotState.EMPTY
             } else {
                 slotUnderMouse.State = SlotState.ENABLED
@@ -110,30 +118,22 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     fun handleSearch(query: String) {
         if (query.isNotBlank()) {
             val craftableRecipesIndexes = searchTree.search(query).fold(setOf<Int>()) { acc, i -> acc + searchTree.getGroupingIndex(i) }
-            displayedRecipes = craftableRecipesIndexes.map { craftableRecipes[it] }
+            displayedRecipes = craftableRecipesIndexes.map { craftableRecipes[it] }.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
             currentSearchQuery = query
-        }
-        else {
-            displayedRecipes = craftableRecipes
+        } else {
+            displayedRecipes = craftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
         }
         checkScrollbar()
     }
+
     // Only sends changes for the slots shared between server and client
     override fun detectAndSendChanges() {
+        val changedStacks: MutableList<ItemStack> = mutableListOf()
         // If any changes were made to the inventory at all
         var updateRecipes = false
         for (i in 0 until ClientSlotsStart) {
             val after = this.inventorySlots[i].stack
-            val before = this.inventoryItemStacks[i]
-
-            val beforeIsNonIngredient by lazy { RecipeCalculator.NonIngredientItems.contains(before.item) }
-            val afterIsNonIngredient by lazy { RecipeCalculator.NonIngredientItems.contains(after.item) }
-
-            val hasAnIngredientChanged = i >= 9 && i != 45 &&
-                    !(beforeIsNonIngredient && after.isEmpty
-                            || before.isEmpty && afterIsNonIngredient
-                            || beforeIsNonIngredient && afterIsNonIngredient
-                            )
+            val before = this.inventoryItemStacks[i].copy()
 
             if (!ItemStack.areItemStacksEqual(after, before)) {
                 val stackChanged = !ItemStack.areItemStacksEqualUsingNBTShareTag(before, after)
@@ -142,9 +142,11 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
                 if (stackChanged) {
                     listeners.forEach { it.sendSlotContents(this, i, before) }
-                    if (hasAnIngredientChanged) {
-                        updateRecipes = true
-                    }
+
+                    if (!before.isEmpty) changedStacks.add(before)
+                    if (!after.isEmpty) changedStacks.add(after)
+                    updateRecipes = true
+
 
                 }
             }
@@ -152,22 +154,23 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         // Regenerate the possible craftable recipes if any changes were made to the inventory
         if (updateRecipes) {
             searchTree = SearchTree()
-            RecipeCalc.populateRecipeList(craftableRecipes) {
+            RecipeCalc.populateRecipeList(craftableRecipes, changedStacks) {
                 if (it == null) {
                     isPopulating = false
+                    craftableRecipes.forEach {
+                        searchTree.putGrouping(*(it.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
+                            TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
+                        }.toTypedArray()))
+                    }
                     handleSearch(currentSearchQuery)
                     checkScrollbar()
                 } else {
                     isPopulating = true
                     checkScrollbar()
-                    searchTree.putGrouping(*(it.first().recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
-                        TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
-                    }.toTypedArray()))
-
                 }
 
             }
-            displayedRecipes = craftableRecipes
+            displayedRecipes = craftableRecipes.groupBy { it.recipeOutput.item }.values.toList() as List<RecipeList>
 
         }
     }
