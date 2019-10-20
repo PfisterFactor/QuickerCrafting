@@ -25,7 +25,8 @@ object RecipeCalculator {
         val usedItemMap: MutableMap<Int, Int> = mutableMapOf()
         val ingredientsLeft = recipe.ingredients.filterNot { it == Ingredient.EMPTY }.toMutableList()
 
-        for (invIndex: Int in inventory.indices) {
+        // Iterate through the craftresult indexes first, then the inventory
+        for (invIndex: Int in IntRange(inventory.size - 4, inventory.size - 1).union(IntRange(0, inventory.size - 4))) {
             if (ingredientsLeft.isEmpty()) break
             val stack = inventory[invIndex]
             if (stack.isEmpty) continue
