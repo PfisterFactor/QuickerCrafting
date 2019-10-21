@@ -24,7 +24,7 @@ object CraftHandler {
         recipe.ingredients.forEachIndexed { index, ingredient ->
             if (ingredient != Ingredient.EMPTY) {
                 val containerIndex = info.ItemMap.keys.find { ingredient.apply(container.getSlot(it).stack) }
-                        ?: return listOf(recipe.recipeOutput)
+                        ?: return listOf(recipe.recipeOutput.copy())
                 val stack = container.getSlot(containerIndex).stack.copy()
                 stack.count = 1
                 fakeCraftingInv.setInventorySlotContents(index, stack)
@@ -33,7 +33,7 @@ object CraftHandler {
         return if (recipe.matches(fakeCraftingInv, container.PlayerInv.player.world)) {
             listOf(recipe.getCraftingResult(fakeCraftingInv)) + recipe.getRemainingItems(fakeCraftingInv).filterNot { it.isEmpty }
         } else
-            listOf(recipe.recipeOutput)
+            listOf(recipe.recipeOutput.copy())
     }
     // Attempts to craft a recipe given the items within the container
     // The shift argument will recursively try to craft the recipe until we run out of ingredients or the  crafting inventory fills up
@@ -67,8 +67,10 @@ object CraftHandler {
             slot.decrStackSize(value)
         }
 
-        // Get the recipe output itemstacks
-        val leftOvers: List<ItemStack> = output.fold(listOf()) { acc, i -> acc + container.quickCraftResult.condensedAdd(i) }
+        // Try to put the recipe output in the inventory and get the itemstacks that couldn't fit
+        val leftOvers: List<ItemStack> = output.fold(listOf()) { acc, i ->
+            acc + container.quickCraftResult.condensedAdd(i)
+        }
 
         leftOvers.forEach {
             if (it.isEmpty) {

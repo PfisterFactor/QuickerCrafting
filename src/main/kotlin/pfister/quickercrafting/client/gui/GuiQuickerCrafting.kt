@@ -23,6 +23,7 @@ import net.minecraftforge.fml.relauncher.Side
 import org.lwjgl.input.Keyboard
 import org.lwjgl.input.Mouse
 import pfister.quickercrafting.MOD_ID
+import pfister.quickercrafting.client.ClientEventListener
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.network.MessageCraftItem
 import pfister.quickercrafting.common.network.PacketHandler
@@ -205,7 +206,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
             } else {
                 when (keyCode) {
                     Keyboard.KEY_TAB -> Searchfield.isFocused = !Searchfield.isFocused
-                    Keyboard.KEY_E -> Minecraft.getMinecraft().player.closeScreen()
+                    ClientEventListener.InvKeyBinding.keyCode -> Minecraft.getMinecraft().player.closeScreen()
                     else -> super.keyTyped(typedChar, keyCode)
                 }
             }
@@ -240,6 +241,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         // Bind the GUI texture
         this.mc.textureManager.bindTexture(TEXTURE)
         Gui.drawModalRectWithCustomSizedTexture(this.guiLeft, this.guiTop, 0f, 0f, this.xSize, this.ySize, 512f, 256f)
+
         GuiInventory.drawEntityOnScreen(this.guiLeft + 51, this.guiTop + 75, 30, this.guiLeft.toFloat() + 51 - mouseX, this.guiTop.toFloat() + 25 - mouseY, Minecraft.getMinecraft().player)
         Searchfield.drawTextBox()
         if (hoveredCraftingInfo?.canCraft() == true) {
@@ -309,10 +311,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
                 99,
                 6,
                 4210752)
-        GlStateManager.colorMask(true, true, true, false)
-        GlStateManager.pushMatrix()
-        GlStateManager.disableLighting()
-        GlStateManager.disableDepth()
+
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         this.mc.textureManager.bindTexture(TEXTURE)
         if (Scrollbar.isEnabled || (inventorySlots as ClientContainerQuickerCrafting).isPopulating)
@@ -338,7 +337,6 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
             if (!(inventorySlots as ClientContainerQuickerCrafting).isPopulating)
                 Scrollbar.currentScroll = 0.0
         }
-        GlStateManager.popMatrix()
 
         inventorySlots.inventorySlots
                 .filter { s -> s is ClientSlot && (s.State == SlotState.DISABLED || s.State == SlotState.EMPTY) }
