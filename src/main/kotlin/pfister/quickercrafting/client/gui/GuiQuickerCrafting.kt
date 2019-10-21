@@ -337,11 +337,13 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
             if (!(inventorySlots as ClientContainerQuickerCrafting).isPopulating)
                 Scrollbar.currentScroll = 0.0
         }
-
+        GlStateManager.disableLighting()
+        GlStateManager.disableDepth()
         inventorySlots.inventorySlots
                 .filter { s -> s is ClientSlot && (s.State == SlotState.DISABLED || s.State == SlotState.EMPTY) }
                 .forEach { slot -> drawGradientRect(slot.xPos, slot.yPos, slot.xPos + 16, slot.yPos + 16, 0x55000000, 0x55000000) }
-
+        GlStateManager.enableLighting()
+        GlStateManager.enableDepth()
     }
 
     override fun hasClickedOutside(mouseX: Int, mouseY: Int, left: Int, top: Int): Boolean {
