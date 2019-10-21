@@ -7,7 +7,7 @@ Note: This only changes player crafting, it does not change any autocrafting mac
 
 ## Features
 - Display all (non-advanced) recipes the player can craft with their inventory in a 3x3 matrix
-- A GUI built on a "no-suprises" principle.
+- A GUI built on a "no-surprises" principle.
 - Craft result slots, so you can chain craft easily (i.e. logs -> planks -> sticks)
 - Search all craftable recipes using a similar implementation as JEI
 - Speedy craftable recipes generation on big modpacks with lots of items and recipes (~5 ms to populate recipes)
