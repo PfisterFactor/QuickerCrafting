@@ -17,8 +17,8 @@ import pfister.quickercrafting.common.gui.NoDragSlot
 import pfister.quickercrafting.common.util.RecipeCache
 import pfister.quickercrafting.common.util.RecipeCache.CraftableRecipes
 import pfister.quickercrafting.common.util.RecipeList
-import pfister.quickercrafting.common.util.SearchTree
 import pfister.quickercrafting.common.util.collection.IndexedSet
+import pfister.quickercrafting.common.util.collection.SearchTree
 import java.util.*
 
 

@@ -1,4 +1,4 @@
-package pfister.quickercrafting.common.util
+package pfister.quickercrafting.common.util.collection
 
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.ints.IntList
