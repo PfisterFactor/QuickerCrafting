@@ -1,4 +1,4 @@
-package pfister.quickercrafting.common.util
+package pfister.quickercrafting.common.crafting
 
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet
 import it.unimi.dsi.fastutil.ints.IntSet

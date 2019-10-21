@@ -15,10 +15,10 @@ import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.QuickerCrafting
 import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
 import pfister.quickercrafting.common.CommonProxy
+import pfister.quickercrafting.common.crafting.RecipeCache
 import pfister.quickercrafting.common.item.ModItems
 import pfister.quickercrafting.common.network.MessageOpenGUI
 import pfister.quickercrafting.common.network.PacketHandler
-import pfister.quickercrafting.common.util.RecipeCache
 
 class ClientProxy : CommonProxy() {
 

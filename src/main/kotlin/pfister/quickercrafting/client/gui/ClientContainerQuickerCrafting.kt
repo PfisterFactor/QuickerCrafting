@@ -11,11 +11,11 @@ import net.minecraft.util.NonNullList
 import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.relauncher.Side
 import net.minecraftforge.fml.relauncher.SideOnly
+import pfister.quickercrafting.common.crafting.RecipeCache
+import pfister.quickercrafting.common.crafting.RecipeCache.CraftableRecipes
+import pfister.quickercrafting.common.crafting.RecipeList
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.gui.NoDragSlot
-import pfister.quickercrafting.common.util.RecipeCache
-import pfister.quickercrafting.common.util.RecipeCache.CraftableRecipes
-import pfister.quickercrafting.common.util.RecipeList
 import pfister.quickercrafting.common.util.collection.IndexedSet
 import pfister.quickercrafting.common.util.collection.SearchTree
 import java.util.*

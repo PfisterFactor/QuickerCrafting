@@ -24,12 +24,12 @@ import org.lwjgl.input.Keyboard
 import org.lwjgl.input.Mouse
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.client.ClientEventListener
+import pfister.quickercrafting.common.crafting.CraftHandler
+import pfister.quickercrafting.common.crafting.RecipeCache
+import pfister.quickercrafting.common.crafting.RecipeCalculator
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.network.MessageCraftItem
 import pfister.quickercrafting.common.network.PacketHandler
-import pfister.quickercrafting.common.util.CraftHandler
-import pfister.quickercrafting.common.util.RecipeCache
-import pfister.quickercrafting.common.util.RecipeCalculator
 import yalter.mousetweaks.api.MouseTweaksIgnore
 
 

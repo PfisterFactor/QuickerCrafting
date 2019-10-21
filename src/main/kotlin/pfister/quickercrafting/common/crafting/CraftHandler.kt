@@ -1,4 +1,4 @@
-package pfister.quickercrafting.common.util
+package pfister.quickercrafting.common.crafting
 
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.inventory.Container
@@ -8,6 +8,7 @@ import net.minecraft.item.crafting.IRecipe
 import net.minecraft.item.crafting.Ingredient
 import pfister.quickercrafting.LOG
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
+import pfister.quickercrafting.common.util.condensedAdd
 
 // Handles the functionality for crafting something
 object CraftHandler {

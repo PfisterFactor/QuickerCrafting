@@ -9,10 +9,10 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.network.NetworkRegistry
 import pfister.quickercrafting.LOG
 import pfister.quickercrafting.QuickerCrafting
+import pfister.quickercrafting.common.crafting.RecipeCache
 import pfister.quickercrafting.common.gui.GuiHandler
 import pfister.quickercrafting.common.item.ItemGuiTester
 import pfister.quickercrafting.common.network.PacketHandler
-import pfister.quickercrafting.common.util.RecipeCache
 import kotlin.system.measureTimeMillis
 
 // Handles initialization functionality common to client and server

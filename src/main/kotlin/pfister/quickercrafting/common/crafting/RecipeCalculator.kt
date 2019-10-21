@@ -1,4 +1,4 @@
-package pfister.quickercrafting.common.util
+package pfister.quickercrafting.common.crafting
 
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe

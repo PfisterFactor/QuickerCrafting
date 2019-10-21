@@ -9,8 +9,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext
 import net.minecraftforge.fml.common.registry.ForgeRegistries
 import pfister.quickercrafting.LOG
+import pfister.quickercrafting.common.crafting.CraftHandler
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
-import pfister.quickercrafting.common.util.CraftHandler
 
 class MessageCraftItem(var Recipe: IRecipe?, var Shift: Boolean = false) : IMessage {
     @Suppress("unused")
