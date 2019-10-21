@@ -63,7 +63,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
             if (gui.hoveredCraftingInfo == null || gui.hoveredCraftingInfo?.canCraft() == false) return
             val itemMap = gui.hoveredCraftingInfo!!.ItemMap
             val inv = Minecraft.getMinecraft().player.openContainer.inventoryItemStacks
-            val packedItemsAndCounts = itemMap.map { Pair(RecipeItemHelper.pack(inv[it.key]), it.value) }.toMap()
+            val packedItemsAndCounts = itemMap.map { RecipeItemHelper.pack(inv[it.key]) to it.value }.toMap()
 
             val tooltipX = event.x + event.width + 7
             val tooltipY = event.y
