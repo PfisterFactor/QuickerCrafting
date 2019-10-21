@@ -70,7 +70,7 @@ object RecipeCache {
     private val oldInventory: Array<ItemStack> = Array(39) { ItemStack.EMPTY }
 
     @SideOnly(Side.CLIENT)
-    fun updateCache(callback: (IRecipe?) -> Unit) {
+    fun updateCache(callback: (Boolean, Int) -> Unit = { _, _ -> }) {
         val player = Minecraft.getMinecraft().player
         val inv: List<ItemStack> = if (player.openContainer is ClientContainerQuickerCrafting) {
             val cont = player.openContainer as ClientContainerQuickerCrafting
@@ -103,7 +103,7 @@ object RecipeCache {
     private var running_thread: Thread = Thread()
 
     @SideOnly(Side.CLIENT)
-    fun populateRecipeCache(inventory: List<ItemStack>, changedStacks: List<ItemStack> = listOf(), callback: (IRecipe?) -> Unit = {}) {
+    fun populateRecipeCache(inventory: List<ItemStack>, changedStacks: List<ItemStack> = listOf(), callback: (Boolean, Int) -> Unit = { _, _ -> }) {
         if (changedStacks.isEmpty()) return
         // Tell the thread to stop if its running
         running_thread.interrupt()
@@ -117,17 +117,23 @@ object RecipeCache {
             if (RecipeGraph.containsVertex(packed))
                 changedRecipes.addAll(RecipeGraph.outgoingEdgesOf(RecipeItemHelper.pack(it)))
         }
-
+        if (changedRecipes.isEmpty()) return
         // Remove only the recipes affected by the changed items
         running_thread = thread(isDaemon = true) {
-            CraftableRecipes.removeIf { recipe -> changedRecipes.any { ItemStack.areItemsEqual(recipe.recipeOutput, it.recipeOutput) } }
+            var counter = 0
+            CraftableRecipes.removeIf { recipe ->
+                val result = changedRecipes.any { ItemStack.areItemsEqual(recipe.recipeOutput, it.recipeOutput) }
+                if (result) counter += 1
+                result
+            }
             changedRecipes.forEach { recipe ->
                 if (RecipeCalculator.canCraft(inventory, recipe)) {
                     CraftableRecipes.add(recipe)
-                    callback(recipe)
+                    counter += 1
+                    callback(false, counter)
                 }
             }
-            callback(null)
+            callback(true, counter)
         }
     }
 }

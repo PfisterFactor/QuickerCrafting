@@ -7,7 +7,6 @@ import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
-import net.minecraft.item.crafting.IRecipe
 import net.minecraft.util.NonNullList
 import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.relauncher.Side
@@ -65,7 +64,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             }
         }
         // Setup things like the search tree, scroll bar,
-        onRecipesCalculated(null)
+        onRecipesCalculated(true, 1)
     }
 
     // Called after populate recipes is done. So we don't reset the scrollbar after every crafting because craftableRecipes isn't fully populated.
@@ -147,12 +146,12 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         }
         // Regenerate the possible craftable recipes if any changes were made to the inventory
         if (updateRecipes) {
-            RecipeCache.updateCache { onRecipesCalculated(it) }
+            RecipeCache.updateCache { ended, rChanged -> onRecipesCalculated(ended, rChanged) }
         }
     }
 
-    private fun onRecipesCalculated(recipe: IRecipe?) {
-        if (recipe == null) {
+    private fun onRecipesCalculated(ended: Boolean, recipesChanged: Int) {
+        if (ended && recipesChanged > 0) {
             isPopulating = false
             // Build search tree
             searchTree = SearchTree()
