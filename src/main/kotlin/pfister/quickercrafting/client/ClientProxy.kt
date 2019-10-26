@@ -6,11 +6,13 @@ import net.minecraftforge.client.event.ModelRegistryEvent
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.InputEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.relauncher.Side
 import org.lwjgl.input.Keyboard
+import pfister.quickercrafting.LOG
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.QuickerCrafting
 import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
@@ -19,12 +21,22 @@ import pfister.quickercrafting.common.crafting.RecipeCache
 import pfister.quickercrafting.common.item.ModItems
 import pfister.quickercrafting.common.network.MessageOpenGUI
 import pfister.quickercrafting.common.network.PacketHandler
+import kotlin.system.measureTimeMillis
 
 class ClientProxy : CommonProxy() {
 
     override fun init(event: FMLInitializationEvent) {
         super.init(event)
         ClientRegistry.registerKeyBinding(ClientEventListener.InvKeyBinding)
+    }
+
+    override fun postInit(event: FMLPostInitializationEvent) {
+        super.postInit(event)
+        // Evaluate the lazy variables, thus calculating the item set and recipe graph
+        val ms1 = measureTimeMillis { RecipeCache.ItemsUsedInRecipes }
+        LOG.info("Building ingredient set took ${ms1}ms.")
+        val ms2 = measureTimeMillis { RecipeCache.RecipeGraph }
+        LOG.info("Building recipe graph took ${ms2}ms.")
     }
 
 }

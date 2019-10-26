@@ -33,8 +33,10 @@ object CraftHandler {
         }
         return if (recipe.matches(fakeCraftingInv, container.PlayerInv.player.world)) {
             listOf(recipe.getCraftingResult(fakeCraftingInv)) + recipe.getRemainingItems(fakeCraftingInv).filterNot { it.isEmpty }
-        } else
+        } else {
             listOf(recipe.recipeOutput.copy())
+        }
+
     }
     // Attempts to craft a recipe given the items within the container
     // The shift argument will recursively try to craft the recipe until we run out of ingredients or the  crafting inventory fills up
@@ -44,8 +46,9 @@ object CraftHandler {
         val itemsToRemove: RecipeCalculator.CraftingInfo = RecipeCalculator.doCraft(container.inventory, recipe)
         if (!itemsToRemove.canCraft()) {
             // If we can't craft any more on the server, and we aren't shift crafting this recipe, display a warning
-            if (isServer && !shift)
-                LOG.warn("MessageCraftItemHandler: Recipes '${recipe.registryName.toString()}' cannot be crafted from ${container.PlayerInv.player.displayNameString}'s inventory on server.")
+            if (isServer && !shift) {
+                LOG.warn("MessageCraftItemHandler: Recipes '${recipe.registryName}' cannot be crafted from ${container.PlayerInv.player.displayNameString}'s inventory on server.")
+            }
             return false
         }
         // Get the output from a simulated matrix, if supported, or just the regular old recipeOutput
@@ -57,8 +60,9 @@ object CraftHandler {
                 container.isCraftResultIndex(key) && container.getSlot(key).stack.count <= value && output.size == 1
             }
             if (!willCraftResultItemBeConsumed) {
-                if (isServer && !shift)
+                if (isServer && !shift) {
                     LOG.warn("MessageCraftItemHandler: Cannot stack '${recipe.registryName.toString()}' into item slot on server.")
+                }
                 return false
             }
         }

@@ -57,7 +57,6 @@ object RecipeCache {
         }
         graph
     }
-
     @SideOnly(Side.CLIENT)
     val CraftableRecipes: IndexedSet<IRecipe> = IndexedSet(Comparator { recipe1, recipe2 ->
         val items = Item.REGISTRY

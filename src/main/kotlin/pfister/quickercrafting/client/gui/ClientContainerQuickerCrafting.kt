@@ -18,7 +18,8 @@ import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.gui.NoDragSlot
 import pfister.quickercrafting.common.util.collection.IndexedSet
 import pfister.quickercrafting.common.util.collection.SearchTree
-import java.util.*
+import java.util.Locale
+import kotlin.Comparator
 
 
 enum class SlotState {
@@ -39,16 +40,20 @@ class ClientSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : NoDragSlot
 
 @SideOnly(Side.CLIENT)
 class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuickerCrafting(true, playerInv) {
+    companion object {
+        const val ROW_LENGTH = 9
+    }
     val ClientSlotsStart: Int = inventorySlots.size
 
     // Stores all the recipes
     val recipeInventory = InventoryBasic("", false, 27)
     // Suffix tree used for searching -- courtesy of JEI
-    var searchTree: SearchTree = SearchTree()
+    private var searchTree: SearchTree = SearchTree()
     var shouldDisplayScrollbar = false
     var currentSearchQuery: String = ""
     var isPopulating: Boolean = false
     // The recipes that match our search query, if the search is empty its the same as craftableRecipes
+    @Suppress("RemoveExplicitTypeArguments")
     private var displayedRecipes: IndexedSet<RecipeList> = IndexedSet(Comparator<RecipeList> { rl1, rl2 ->
         val items = Item.REGISTRY
         val r1 = items.indexOfFirst { rl1.first().recipeOutput.item == it }
@@ -68,16 +73,16 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     }
 
     // Called after populate recipes is done. So we don't reset the scrollbar after every crafting because craftableRecipes isn't fully populated.
-    fun checkScrollbar() {
+    private fun checkScrollbar() {
         shouldDisplayScrollbar = displayedRecipes.count() > inventorySlots.size - ClientSlotsStart
     }
 
     fun updateDisplay(currentScroll: Double, slotUnderMouse: ClientSlot?, forceRefresh: Boolean = false) {
         val length = displayedRecipes.count()
-        val rows = (length + 8) / 9 - 3
+        val rows = (length + (ROW_LENGTH - 1)) / ROW_LENGTH - 3
         slotRowYOffset = ((currentScroll * rows.toDouble()) + 0.5).toInt()
         fun updateSlot(slot: ClientSlot) {
-            val recipes = displayedRecipes.getOrNull(slotRowYOffset * 9 + slot.slotNumber - ClientSlotsStart)
+            val recipes = displayedRecipes.getOrNull(slotRowYOffset * ROW_LENGTH + slot.slotNumber - ClientSlotsStart)
             if (recipes != null) {
                 slot.putStack(recipes[slot.RecipeIndex].recipeOutput)
                 slot.State = SlotState.ENABLED
@@ -109,17 +114,16 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 slotUnderMouse.State = SlotState.ENABLED
             }
         }
-
-
     }
-
     fun handleSearch(query: String) {
         displayedRecipes.clear()
         if (query.isNotBlank()) {
             val craftableRecipesIndexes = searchTree.search(query).fold(setOf<Int>()) { acc, i -> acc + searchTree.getGroupingIndex(i) }
+            @Suppress("UNCHECKED_CAST")
             displayedRecipes.addAll(craftableRecipesIndexes.map { CraftableRecipes[it] }.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
             currentSearchQuery = query
         } else {
+            @Suppress("UNCHECKED_CAST")
             displayedRecipes.addAll(CraftableRecipes.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
         }
         checkScrollbar()
@@ -155,14 +159,14 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             isPopulating = false
             // Build search tree
             searchTree = SearchTree()
-            CraftableRecipes.forEach {
-                searchTree.putGrouping(*(it.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
+            CraftableRecipes.forEach { recipe ->
+                searchTree.putGrouping((recipe.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
                     TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
-                }.toTypedArray()))
+                }))
             }
-
             // Group recipes with the same output
             displayedRecipes.clear()
+            @Suppress("UNCHECKED_CAST")
             displayedRecipes.addAll(CraftableRecipes.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
 
             // Search any query we have
@@ -188,5 +192,4 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         })
         return list
     }
-
 }

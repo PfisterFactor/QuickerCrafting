@@ -41,7 +41,6 @@ object RecipeCalculator {
                         usedItemMap[invIndex] = itemCount + 1
                         ingredientsLeft.removeAt(ingrIndex)
                     }
-
                 }
             }
         }

@@ -11,15 +11,19 @@ class SearchTree : GeneralizedSuffixTree() {
     // Puts all the strings in the tree and records their indexes in the grouping map
     private var nextTreeIndex = 0
 
-    fun putGrouping(vararg strings: String) {
-        var intList = IntArrayList()
-        strings.forEach {
+    fun putGrouping(list: List<String>) {
+        val intList = IntArrayList()
+        list.forEach {
             intList.push(nextTreeIndex)
             put(it, nextTreeIndex)
             nextTreeIndex += 1
         }
         indexGroupingMap.put(nextMapIndex, intList)
         nextMapIndex++
+    }
+
+    fun putGrouping(vararg strings: String) {
+        putGrouping(strings.toList())
     }
 
     // Finds the grouping index from the tree index, or -1 if it cant find anything
