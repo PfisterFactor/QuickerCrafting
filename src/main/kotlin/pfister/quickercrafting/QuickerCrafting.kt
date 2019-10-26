@@ -3,6 +3,7 @@ package pfister.quickercrafting
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.SidedProxy
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
+import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 import org.apache.logging.log4j.Logger
@@ -40,5 +41,10 @@ object QuickerCrafting {
     @Mod.EventHandler
     fun postInit(event: FMLPostInitializationEvent) {
         proxy.postInit(event)
+    }
+
+    @Mod.EventHandler
+    fun loadComplete(event: FMLLoadCompleteEvent) {
+        proxy.loadComplete(event)
     }
 }

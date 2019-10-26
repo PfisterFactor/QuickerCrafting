@@ -3,6 +3,7 @@ import net.minecraft.item.Item
 import net.minecraftforge.event.RegistryEvent
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
+import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
@@ -31,6 +32,12 @@ open class CommonProxy {
     open fun postInit(event: FMLPostInitializationEvent) {
 
     }
+
+    @Mod.EventHandler
+    open fun loadComplete(event: FMLLoadCompleteEvent) {
+
+    }
+
 
 }
 

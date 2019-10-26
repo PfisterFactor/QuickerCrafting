@@ -6,6 +6,7 @@ import net.minecraftforge.client.event.ModelRegistryEvent
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
+import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.InputEvent
@@ -28,6 +29,7 @@ class ClientProxy : CommonProxy() {
     override fun init(event: FMLInitializationEvent) {
         super.init(event)
         ClientRegistry.registerKeyBinding(ClientEventListener.InvKeyBinding)
+
     }
 
     override fun postInit(event: FMLPostInitializationEvent) {
@@ -38,6 +40,25 @@ class ClientProxy : CommonProxy() {
         val ms2 = measureTimeMillis { RecipeCache.RecipeGraph }
         LOG.info("Building recipe graph took ${ms2}ms.")
     }
+
+    override fun loadComplete(event: FMLLoadCompleteEvent) {
+        hookInventoryKeybind()
+    }
+
+    // Creates a keybinding hook and replaces the inventory keybinding with it
+    // Makes it so pressing the key for QuickerCrafing will close other guis like how pressing E closes guis
+    private fun hookInventoryKeybind() {
+        val settings = Minecraft.getMinecraft().gameSettings
+        val invKeyIndex = settings.keyBindings.indexOf(settings.keyBindInventory)
+        if (invKeyIndex != -1) {
+            val hook = KeybindingHook(settings.keyBindings[invKeyIndex], ClientEventListener.InvKeyBinding)
+            settings.keyBindings[invKeyIndex] = hook
+            settings.keyBindInventory = hook
+        } else {
+            LOG.warn("ClientProxy: There was an issue finding the inventory keybinding (${settings.keyBindInventory}) within the keybinding array, could not install hook!")
+        }
+    }
+
 
 }
 @Mod.EventBusSubscriber(Side.CLIENT)
