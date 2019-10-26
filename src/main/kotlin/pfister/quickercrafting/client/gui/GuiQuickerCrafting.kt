@@ -1,11 +1,13 @@
 package pfister.quickercrafting.client.gui
 
+import com.google.common.collect.Ordering
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Gui
 import net.minecraft.client.gui.GuiTextField
 import net.minecraft.client.gui.inventory.GuiContainer
 import net.minecraft.client.gui.inventory.GuiInventory
 import net.minecraft.client.renderer.GlStateManager
+import net.minecraft.client.renderer.InventoryEffectRenderer
 import net.minecraft.client.renderer.RenderHelper
 import net.minecraft.client.resources.I18n
 import net.minecraft.client.util.RecipeItemHelper
@@ -13,6 +15,8 @@ import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.ClickType
 import net.minecraft.inventory.Slot
 import net.minecraft.item.crafting.IRecipe
+import net.minecraft.potion.Potion
+import net.minecraft.potion.PotionEffect
 import net.minecraft.util.ResourceLocation
 import net.minecraft.util.math.MathHelper
 import net.minecraftforge.client.event.RenderTooltipEvent
@@ -37,10 +41,9 @@ import yalter.mousetweaks.api.MouseTweaksIgnore
 // Tell mousetweaks to go away or it screws up scrolling through the list
 // Todo: Might be able to change this to @MouseTweaksDisableWheelTweak
 @MouseTweaksIgnore
-class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContainerQuickerCrafting(playerInv)) {
+class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(ClientContainerQuickerCrafting(playerInv)) {
     companion object {
         val TEXTURE: ResourceLocation = ResourceLocation(MOD_ID, "textures/gui/quickercrafting_inv.png")
-
         @JvmStatic
         @SubscribeEvent
         // Cancels the tooltip rendering
@@ -53,6 +56,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
                 return
             }
         }
+
         @JvmStatic
         @SubscribeEvent
         fun onToolTipRender(event: RenderTooltipEvent.PostText) {
@@ -158,12 +162,11 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
     private lateinit var Searchfield: GuiTextField
     private lateinit var Scrollbar: GuiScrollBar
-
-
     // If the mouse was down the last frame
     private var wasClicking = false
 
     var hoveredCraftingInfo: RecipeCalculator.CraftingInfo? = null
+
     init {
         // Set size of window
         this.xSize = 283
@@ -276,9 +279,9 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         Scrollbar.isEnabled = (inventorySlots as ClientContainerQuickerCrafting).shouldDisplayScrollbar
         drawDefaultBackground()
         val isClicking: Boolean = Mouse.isButtonDown(0)
-        if (!wasClicking && isClicking && Scrollbar.isInScrollBarBounds(mouseX, mouseY))
+        if (!wasClicking && isClicking && Scrollbar.isInScrollBarBounds(mouseX, mouseY)) {
             Scrollbar.isScrolling = true
-
+        }
         if (!isClicking)
             Scrollbar.isScrolling = false
 
@@ -290,20 +293,20 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         }
         super.drawScreen(mouseX, mouseY, partialTicks)
 
-        if (slotUnderMouse != null && slotUnderMouse
-                        is ClientSlot) {
+        hoveredCraftingInfo = if (slotUnderMouse != null && slotUnderMouse is ClientSlot) {
             val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipes?.get((slotUnderMouse as ClientSlot).RecipeIndex)
-            hoveredCraftingInfo = if (recipe != null) RecipeCalculator.doCraft(inventorySlots.inventory, recipe) else null
+            if (recipe != null) RecipeCalculator.doCraft(inventorySlots.inventory, recipe) else null
         } else
-            hoveredCraftingInfo = null
+            null
 
         renderHoveredToolTip(mouseX, mouseY)
     }
 
     override fun renderHoveredToolTip(mouseX: Int, mouseY: Int) {
         super.renderHoveredToolTip(mouseX, mouseY)
-        if (hoveredCraftingInfo != null)
+        if (hoveredCraftingInfo != null) {
             renderToolTip(hoveredCraftingInfo!!.Recipe.recipeOutput, mouseX, mouseY)
+        }
     }
 
     override fun drawGuiContainerForegroundLayer(mouseX: Int, mouseY: Int) {
@@ -314,8 +317,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         this.mc.textureManager.bindTexture(TEXTURE)
-        if (Scrollbar.isEnabled || (inventorySlots as ClientContainerQuickerCrafting).isPopulating)
-
+        if (Scrollbar.isEnabled || (inventorySlots as ClientContainerQuickerCrafting).isPopulating) {
             Gui.drawModalRectWithCustomSizedTexture(
                     GuiScrollBar.GUI_POS_X,
                     MathHelper.clamp(GuiScrollBar.GUI_POS_Y - GuiScrollBar.TEX_HEIGHT / 2 + (GuiScrollBar.SCROLLBAR_HEIGHT * Scrollbar.currentScroll).toInt(), GuiScrollBar.GUI_POS_Y, GuiScrollBar.GUI_POS_Y + GuiScrollBar.SCROLLBAR_HEIGHT - GuiScrollBar.TEX_HEIGHT - 1
@@ -325,7 +327,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
                     GuiScrollBar.TEX_WIDTH,
                     GuiScrollBar.TEX_HEIGHT, 512f, 256f
             )
-        else {
+        } else {
+
             Gui.drawModalRectWithCustomSizedTexture(
                     GuiScrollBar.GUI_POS_X,
                     GuiScrollBar.GUI_POS_Y,
@@ -334,8 +337,9 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
                     GuiScrollBar.TEX_WIDTH,
                     GuiScrollBar.TEX_HEIGHT, 512f, 256f
             )
-            if (!(inventorySlots as ClientContainerQuickerCrafting).isPopulating)
+            if (!(inventorySlots as ClientContainerQuickerCrafting).isPopulating) {
                 Scrollbar.currentScroll = 0.0
+            }
         }
         GlStateManager.disableLighting()
         GlStateManager.disableDepth()
@@ -346,14 +350,73 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : GuiContainer(ClientContai
         GlStateManager.enableDepth()
     }
 
+    // Most of this is ripped out of InventoryEffectRenderer
+    // We just change it so the potion effects scale at differing screen widths
+    override fun drawActivePotionEffects() {
+        val i = if (this.guiLeft - 124 < 0) 0 else this.guiLeft - 124
+        var j = this.guiTop
+        val collection = this.mc.player.activePotionEffects
+
+        if (!collection.isEmpty()) {
+            GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
+            GlStateManager.disableLighting()
+            var l = 33
+
+            if (collection.size > 5) {
+                l = 132 / (collection.size - 1)
+            }
+
+            for (potioneffect in Ordering.natural<PotionEffect>().sortedCopy(collection)) {
+                val potion = potioneffect.potion
+                if (!potion.shouldRender(potioneffect)) continue
+                var s1 = I18n.format(potion.name)
+
+                if (potioneffect.amplifier == 1) {
+                    s1 = s1 + " " + I18n.format("enchantment.level.2")
+                } else if (potioneffect.amplifier == 2) {
+                    s1 = s1 + " " + I18n.format("enchantment.level.3")
+                } else if (potioneffect.amplifier == 3) {
+                    s1 = s1 + " " + I18n.format("enchantment.level.4")
+                }
+
+                val guiOverSizeFlag = i + 28 + fontRenderer.getStringWidth(s1) + 3 >= this.guiLeft
+                GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
+                this.mc.textureManager.bindTexture(GuiContainer.INVENTORY_BACKGROUND)
+
+                if (guiOverSizeFlag) {
+                    this.drawTexturedModalRect(this.guiLeft - 24, j, 141, 166, 24, 24)
+                    if (potion.hasStatusIcon()) {
+                        val i1 = potion.statusIconIndex
+                        this.drawTexturedModalRect(this.guiLeft - 21, j + 3, 0 + i1 % 8 * 18, 198 + i1 / 8 * 18, 18, 18)
+                    }
+                } else {
+                    this.drawTexturedModalRect(i, j, 0, 166, this.guiLeft - i - 4, 32)
+                    this.drawTexturedModalRect(this.guiLeft - 4, j, 116, 166, 4, 32)
+                    if (potion.hasStatusIcon()) {
+                        val i1 = potion.statusIconIndex
+                        this.drawTexturedModalRect(i + 6, j + 7, 0 + i1 % 8 * 18, 198 + i1 / 8 * 18, 18, 18)
+                    }
+                }
+                potion.renderInventoryEffect(i, j, potioneffect, mc)
+                if (!potion.shouldRenderInvText(potioneffect) || guiOverSizeFlag) {
+                    j += l
+                    continue
+                }
+
+
+                this.fontRenderer.drawStringWithShadow(s1, (i + 10 + 18).toFloat(), (j + 6).toFloat(), 16777215)
+                val s = Potion.getPotionDurationString(potioneffect, 1.0f)
+                this.fontRenderer.drawStringWithShadow(s, (i + 10 + 18).toFloat(), (j + 6 + 10).toFloat(), 8355711)
+                j += l
+            }
+        }
+    }
+
     override fun hasClickedOutside(mouseX: Int, mouseY: Int, left: Int, top: Int): Boolean {
         return if (mouseY > top + 78) {
-            if (mouseY > top + 147)
-                mouseX < left || mouseX > left + 175 || mouseY < top || mouseY > top + ySize
-            else
-                mouseX < left || mouseX > left + 206 || mouseY < top || mouseY > top + ySize
-        } else
-            super.hasClickedOutside(mouseX, mouseY, left, top)
+            if (mouseY > top + 147) mouseX < left || mouseX > left + 175 || mouseY < top || mouseY > top + ySize
+            else mouseX < left || mouseX > left + 206 || mouseY < top || mouseY > top + ySize
+        } else super.hasClickedOutside(mouseX, mouseY, left, top)
     }
 
 }
