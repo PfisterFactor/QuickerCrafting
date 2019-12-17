@@ -166,6 +166,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
 
     private lateinit var Searchfield: GuiTextField
     private lateinit var Scrollbar: GuiScrollBar
+    private lateinit var ChangeMenuButton: GuiButtonImageBiggerTexture
     // If the mouse was down the last frame
     private var wasClicking = false
 
@@ -181,6 +182,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         super.initGui()
         Scrollbar = GuiScrollBar(guiLeft, guiTop)
         Searchfield = GuiTextField(0, fontRenderer, guiLeft + 144, guiTop + 7, 87, 9)
+        ChangeMenuButton = GuiButtonImageBiggerTexture(0, guiLeft + 262, guiTop + 3, 17, 15, 492, 204, 16, GuiQuickerCrafting.TEXTURE, 512f, 256f)
         Searchfield.maxStringLength = 50
         Searchfield.enableBackgroundDrawing = false
         Searchfield.setTextColor(16777215)
@@ -240,6 +242,10 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
             slot.RecipeIndex = (slot.RecipeIndex + 1) % (slot.Recipes?.size ?: 1)
         }
         Searchfield.mouseClicked(mouseX, mouseY, mouseButton)
+        if (ChangeMenuButton.mousePressed(Minecraft.getMinecraft(), mouseX, mouseY)) {
+            ChangeMenuButton.playPressSound(Minecraft.getMinecraft().soundHandler)
+            Minecraft.getMinecraft().displayGuiScreen(GuiInventory(Minecraft.getMinecraft().player))
+        }
     }
 
     // Draws the background to the GUI
@@ -296,7 +302,9 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
             Scrollbar.currentScroll = MathHelper.clamp(Scrollbar.currentScroll, 0.0, 1.0)
         }
         super.drawScreen(mouseX, mouseY, partialTicks)
-
+        GlStateManager.disableLighting()
+        ChangeMenuButton.drawButton(Minecraft.getMinecraft(), mouseX, mouseY, partialTicks)
+        GlStateManager.enableLighting()
         hoveredCraftingInfo = if (slotUnderMouse != null && slotUnderMouse is ClientSlot) {
             val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipes?.get((slotUnderMouse as ClientSlot).RecipeIndex)
             if (recipe != null) {
