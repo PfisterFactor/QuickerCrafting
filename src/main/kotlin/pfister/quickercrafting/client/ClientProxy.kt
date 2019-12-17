@@ -1,7 +1,12 @@
 package pfister.quickercrafting.client
 
 import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.ScaledResolution
+import net.minecraft.client.gui.inventory.GuiInventory
+import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.settings.KeyBinding
+import net.minecraftforge.client.event.GuiContainerEvent
+import net.minecraftforge.client.event.GuiScreenEvent
 import net.minecraftforge.client.event.ModelRegistryEvent
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
@@ -13,10 +18,13 @@ import net.minecraftforge.fml.common.gameevent.InputEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.relauncher.Side
 import org.lwjgl.input.Keyboard
+import org.lwjgl.input.Mouse
 import pfister.quickercrafting.LOG
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.QuickerCrafting
 import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
+import pfister.quickercrafting.client.gui.GuiButtonImageBiggerTexture
+import pfister.quickercrafting.client.gui.GuiQuickerCrafting
 import pfister.quickercrafting.common.CommonProxy
 import pfister.quickercrafting.common.crafting.RecipeCache
 import pfister.quickercrafting.common.item.ModItems
@@ -99,6 +107,43 @@ object ClientEventListener {
             if (player.openContainer != null && player.openContainer !is ClientContainerQuickerCrafting) {
                 RecipeCache.updateCache()
             }
+        }
+    }
+
+    val quickerCraftingButton: GuiButtonImageBiggerTexture = GuiButtonImageBiggerTexture(100, 0, 0, 17, 15, 473, 204, 16, GuiQuickerCrafting.TEXTURE, 512f, 256f)
+    @JvmStatic
+    @SubscribeEvent
+    // Adds our button to go to the quicker crafting menu in the inventory
+    fun onRenderTick(event: GuiContainerEvent.DrawForeground) {
+        if (Minecraft.getMinecraft().currentScreen !is GuiInventory) return
+        val inv = (Minecraft.getMinecraft().currentScreen as GuiInventory)
+        quickerCraftingButton.x = 155
+        quickerCraftingButton.y = 4
+        GlStateManager.pushMatrix()
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
+        GlStateManager.disableLighting()
+        quickerCraftingButton.drawButton(Minecraft.getMinecraft(), event.mouseX - inv.guiLeft, event.mouseY - inv.guiTop, 1f)
+        GlStateManager.popMatrix()
+
+
+    }
+
+    @JvmStatic
+    @SubscribeEvent
+    fun onGuiInput(event: GuiScreenEvent.MouseInputEvent.Pre) {
+        if (Minecraft.getMinecraft().currentScreen !is GuiInventory || !Mouse.isButtonDown(0)) return
+        val inv = (Minecraft.getMinecraft().currentScreen as GuiInventory)
+        val scaledresolution = ScaledResolution(Minecraft.getMinecraft())
+        val mouseX: Int = Mouse.getX() * scaledresolution.scaledWidth / Minecraft.getMinecraft().displayWidth
+        val mouseY: Int = scaledresolution.scaledHeight - Mouse.getY() * scaledresolution.scaledHeight / Minecraft.getMinecraft().displayHeight - 1
+        if (quickerCraftingButton.mousePressed(Minecraft.getMinecraft(), mouseX - inv.guiLeft, mouseY - inv.guiTop)) {
+            val player = Minecraft.getMinecraft().player
+            quickerCraftingButton.playPressSound(Minecraft.getMinecraft().soundHandler)
+            PacketHandler.INSTANCE.sendToServer(MessageOpenGUI())
+            player.openGui(QuickerCrafting, 0, player.world,
+                    player.posX.toInt(),
+                    player.posY.toInt(),
+                    player.posZ.toInt())
         }
     }
 }
