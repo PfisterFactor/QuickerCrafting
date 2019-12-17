@@ -71,16 +71,16 @@ object RecipeCache {
     @SideOnly(Side.CLIENT)
     fun updateCache(callback: (Boolean, Int) -> Unit = { _, _ -> }) {
         val player = Minecraft.getMinecraft().player
-        val inv: List<ItemStack> = if (player.openContainer is ClientContainerQuickerCrafting) {
+        val inv: Array<ItemStack> = if (player.openContainer is ClientContainerQuickerCrafting) {
             val cont = player.openContainer as ClientContainerQuickerCrafting
             val modifiedInv = cont.inventoryItemStacks.take(cont.ClientSlotsStart).toMutableList()
             modifiedInv.removeAt(45)
-            modifiedInv.drop(9)
+            modifiedInv.drop(9).toTypedArray()
         } else {
             oldInventory[36] = ItemStack.EMPTY
             oldInventory[37] = ItemStack.EMPTY
             oldInventory[38] = ItemStack.EMPTY
-            player.inventory.mainInventory.drop(9) + player.inventory.mainInventory.take(9)
+            (player.inventory.mainInventory.drop(9) + player.inventory.mainInventory.take(9)).toTypedArray()
         }
 
         val changedStacks: MutableList<ItemStack> = mutableListOf()
@@ -95,14 +95,24 @@ object RecipeCache {
                 }
             }
         }
-        populateRecipeCache(inv, changedStacks, callback)
+        val craftInv = object : RecipeCalculator.CraftInventory {
+            override fun getNormalInv(): Array<ItemStack> {
+                return inv.dropLast(3).toTypedArray()
+            }
+
+            override fun getCraftResults(): Array<ItemStack> {
+                return inv.takeLast(3).toTypedArray()
+            }
+
+        }
+        populateRecipeCache(craftInv, changedStacks, callback)
     }
 
     @SideOnly(Side.CLIENT)
     private var running_thread: Thread = Thread()
 
     @SideOnly(Side.CLIENT)
-    fun populateRecipeCache(inventory: List<ItemStack>, changedStacks: List<ItemStack> = listOf(), callback: (Boolean, Int) -> Unit = { _, _ -> }) {
+    fun populateRecipeCache(inventory: RecipeCalculator.CraftInventory, changedStacks: List<ItemStack> = listOf(), callback: (Boolean, Int) -> Unit = { _, _ -> }) {
         if (changedStacks.isEmpty()) return
         // Tell the thread to stop if its running
         running_thread.interrupt()

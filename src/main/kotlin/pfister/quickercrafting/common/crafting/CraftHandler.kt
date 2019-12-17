@@ -43,7 +43,7 @@ object CraftHandler {
     fun tryCraftRecipe(container: ContainerQuickerCrafting, recipe: IRecipe, shift: Boolean = false): Boolean {
         val isServer = !container.PlayerInv.player.world.isRemote
         // Get a map of items used and how much are used
-        val itemsToRemove: RecipeCalculator.CraftingInfo = RecipeCalculator.doCraft(container.inventory, recipe)
+        val itemsToRemove: RecipeCalculator.CraftingInfo = RecipeCalculator.doCraft(container.getCraftInventory(), recipe)
         if (!itemsToRemove.canCraft()) {
             // If we can't craft any more on the server, and we aren't shift crafting this recipe, display a warning
             if (isServer && !shift) {

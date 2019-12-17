@@ -7,6 +7,7 @@ import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
 import net.minecraft.inventory.Slot
 import net.minecraft.item.ItemStack
+import pfister.quickercrafting.common.crafting.RecipeCalculator
 
 open class NoDragSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : Slot(inv, index, xPos, yPos) {
     override fun isItemValid(stack: ItemStack): Boolean {
@@ -79,6 +80,21 @@ open class ContainerQuickerCrafting(localWorld: Boolean = false, val PlayerInv: 
         playerIn.addItemStackToInventory(slot.onTake(playerIn, slot.stack))
         slot.putStack(ItemStack.EMPTY)
         return ItemStack.EMPTY
+    }
+
+    // Get all the slots we craft with
+    // Excludes the player inventory's crafting matrix and result, plus the armor slots and offhand slot
+    fun getCraftInventory(): RecipeCalculator.CraftInventory {
+        return object : RecipeCalculator.CraftInventory {
+            override fun getNormalInv(): Array<ItemStack> {
+                return inventory.dropLast(3).toTypedArray()
+            }
+
+            override fun getCraftResults(): Array<ItemStack> {
+                return (0 until 3).map { quickCraftResult.getStackInSlot(it) }.toTypedArray()
+            }
+
+        }
     }
 
 }

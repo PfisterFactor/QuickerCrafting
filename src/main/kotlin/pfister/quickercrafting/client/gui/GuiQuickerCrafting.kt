@@ -34,13 +34,13 @@ import pfister.quickercrafting.common.crafting.RecipeCalculator
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.network.MessageCraftItem
 import pfister.quickercrafting.common.network.PacketHandler
-import yalter.mousetweaks.api.MouseTweaksIgnore
+import yalter.mousetweaks.api.MouseTweaksDisableWheelTweak
+import java.awt.Color
 
 
 @Mod.EventBusSubscriber(Side.CLIENT)
 // Tell mousetweaks to go away or it screws up scrolling through the list
-// Todo: Might be able to change this to @MouseTweaksDisableWheelTweak
-@MouseTweaksIgnore
+@MouseTweaksDisableWheelTweak
 class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(ClientContainerQuickerCrafting(playerInv)) {
     companion object {
         val TEXTURE: ResourceLocation = ResourceLocation(MOD_ID, "textures/gui/quickercrafting_inv.png")
@@ -65,9 +65,12 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
             val gui = Minecraft.getMinecraft().currentScreen as GuiQuickerCrafting
 
             if (gui.hoveredCraftingInfo == null || gui.hoveredCraftingInfo?.canCraft() == false) return
-            val itemMap = gui.hoveredCraftingInfo!!.ItemMap
+            val itemMap = gui.hoveredCraftingInfo!!.totalItemMap
             val inv = Minecraft.getMinecraft().player.openContainer.inventoryItemStacks
-            val packedItemsAndCounts = itemMap.map { RecipeItemHelper.pack(inv[it.key]) to it.value }.toMap()
+            val packedItemsAndCounts = mutableMapOf<Int, Int>()
+            itemMap.forEach { (k, v) ->
+                packedItemsAndCounts.merge(RecipeItemHelper.pack(inv[k]), v) { v1, v2 -> v1 + v2 }
+            }
 
             val tooltipX = event.x + event.width + 7
             val tooltipY = event.y
@@ -143,7 +146,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
                     tooltipY + tooltipHeight + 3,
                     borderColorEnd,
                     borderColorEnd)
-
+            val xOffset = (if (packedItemsAndCounts.size > 3) 3 else packedItemsAndCounts.size) * 18
+            gui.fontRenderer.drawString("x" + gui.hoveredCraftingInfo!!.CraftingInfos.size, tooltipX.toFloat() + xOffset, tooltipY.toFloat(), Color.MAGENTA.rgb, true)
             var x = 0
             var y = 0
             packedItemsAndCounts.forEach { pair ->
@@ -165,7 +169,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     // If the mouse was down the last frame
     private var wasClicking = false
 
-    var hoveredCraftingInfo: RecipeCalculator.CraftingInfo? = null
+    var hoveredCraftingInfo: RecipeCalculator.CraftingPath? = null
 
     init {
         // Set size of window
@@ -195,8 +199,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         if (slotId < (inventorySlots as ClientContainerQuickerCrafting).ClientSlotsStart)
             super.handleMouseClick(slotIn, slotId, mouseButton, type)
         else if (hoveredCraftingInfo != null && mouseButton == 0 && type != ClickType.THROW && Minecraft.getMinecraft().player.inventory.itemStack.isEmpty) {
-            if (CraftHandler.tryCraftRecipe(this.inventorySlots as ContainerQuickerCrafting, hoveredCraftingInfo!!.Recipe, type == ClickType.QUICK_MOVE))
-                PacketHandler.INSTANCE.sendToServer(MessageCraftItem(hoveredCraftingInfo!!.Recipe, type == ClickType.QUICK_MOVE))
+            if (CraftHandler.tryCraftRecipe(this.inventorySlots as ContainerQuickerCrafting, hoveredCraftingInfo?.CraftingInfos?.first()?.Recipe!!, type == ClickType.QUICK_MOVE))
+                PacketHandler.INSTANCE.sendToServer(MessageCraftItem(hoveredCraftingInfo?.CraftingInfos?.first()?.Recipe!!, type == ClickType.QUICK_MOVE))
         }
     }
 
@@ -250,7 +254,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         if (hoveredCraftingInfo?.canCraft() == true) {
             GlStateManager.pushMatrix()
             // Draws green semi-transparent rectangles behind items that will be used to craft the recipe
-            hoveredCraftingInfo!!.ItemMap.forEach { (key, _) ->
+            hoveredCraftingInfo!!.totalItemMap.forEach { (key, _) ->
                 val row = key / 9 // 1-4 is the player's inventory, 5 is the craft buffer on the right
                 val column = key % 9
                 var xToDrawAt = guiLeft + 8 + column * 18
@@ -295,7 +299,14 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
 
         hoveredCraftingInfo = if (slotUnderMouse != null && slotUnderMouse is ClientSlot) {
             val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipes?.get((slotUnderMouse as ClientSlot).RecipeIndex)
-            if (recipe != null) RecipeCalculator.doCraft(inventorySlots.inventory, recipe) else null
+            if (recipe != null) {
+                if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+                    RecipeCalculator.CraftingPath.shiftCraftRecipe((inventorySlots as ContainerQuickerCrafting).getCraftInventory(), recipe)
+                } else {
+                    RecipeCalculator.doCraft((inventorySlots as ContainerQuickerCrafting).getCraftInventory(), recipe).toCraftPath()
+                }
+
+            } else null
         } else
             null
 
@@ -304,8 +315,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
 
     override fun renderHoveredToolTip(mouseX: Int, mouseY: Int) {
         super.renderHoveredToolTip(mouseX, mouseY)
-        if (hoveredCraftingInfo != null) {
-            renderToolTip(hoveredCraftingInfo!!.Recipe.recipeOutput, mouseX, mouseY)
+        if (hoveredCraftingInfo?.finalRecipeOutput() != null) {
+            renderToolTip(hoveredCraftingInfo?.finalRecipeOutput()!!, mouseX, mouseY)
         }
     }
 
