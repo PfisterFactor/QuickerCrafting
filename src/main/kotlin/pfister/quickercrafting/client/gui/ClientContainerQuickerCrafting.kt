@@ -155,25 +155,27 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     }
 
     private fun onRecipesCalculated(ended: Boolean, recipesChanged: Int) {
-        if (ended && recipesChanged > 0) {
+        if (ended) {
             isPopulating = false
-            // Build search tree
-            searchTree = SearchTree()
-            CraftableRecipes.forEach { recipe ->
-                searchTree.putGrouping((recipe.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
-                    TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
-                }))
+            if (recipesChanged > 0) {
+                // Build search tree
+                searchTree = SearchTree()
+                CraftableRecipes.forEach { recipe ->
+                    searchTree.putGrouping((recipe.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
+                        TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
+                    }))
+                }
+                // Group recipes with the same output
+                displayedRecipes.clear()
+                @Suppress("UNCHECKED_CAST")
+                displayedRecipes.addAll(CraftableRecipes.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
+
+                // Search any query we have
+                handleSearch(currentSearchQuery)
+
+                // Check to see if the scrollbar should be enabled
+                checkScrollbar()
             }
-            // Group recipes with the same output
-            displayedRecipes.clear()
-            @Suppress("UNCHECKED_CAST")
-            displayedRecipes.addAll(CraftableRecipes.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
-
-            // Search any query we have
-            handleSearch(currentSearchQuery)
-
-            // Check to see if the scrollbar should be enabled
-            checkScrollbar()
         } else {
             isPopulating = true
             checkScrollbar()
