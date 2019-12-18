@@ -117,8 +117,9 @@ object ClientEventListener {
     fun onRenderTick(event: GuiContainerEvent.DrawForeground) {
         if (Minecraft.getMinecraft().currentScreen !is GuiInventory) return
         val inv = (Minecraft.getMinecraft().currentScreen as GuiInventory)
-        quickerCraftingButton.x = 155
-        quickerCraftingButton.y = 4
+
+        quickerCraftingButton.x = inv.inventorySlots.inventorySlots[0].xPos
+        quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
         GlStateManager.pushMatrix()
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         GlStateManager.disableLighting()
