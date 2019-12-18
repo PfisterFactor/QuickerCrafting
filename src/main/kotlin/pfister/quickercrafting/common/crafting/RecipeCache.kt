@@ -69,7 +69,7 @@ object RecipeCache {
     private val oldInventory: Array<ItemStack> = Array(39) { ItemStack.EMPTY }
 
     @SideOnly(Side.CLIENT)
-    fun updateCache(callback: (Boolean, Int) -> Unit = { _, _ -> }) {
+    fun updateCache(forceRefresh: Boolean = false, callback: (Boolean, Int) -> Unit = { _, _ -> }) {
         val player = Minecraft.getMinecraft().player
         val inv: Array<ItemStack> = if (player.openContainer is ClientContainerQuickerCrafting) {
             val cont = player.openContainer as ClientContainerQuickerCrafting
@@ -84,14 +84,18 @@ object RecipeCache {
         }
 
         val changedStacks: MutableList<ItemStack> = mutableListOf()
-        inv.forEachIndexed { i, after ->
-            val before = oldInventory[i]
-            if (!ItemStack.areItemStacksEqual(before, after)) {
-                val changed = !ItemStack.areItemStacksEqualUsingNBTShareTag(before, after)
-                if (changed) {
-                    if (!before.isEmpty) changedStacks.add(before)
-                    if (!after.isEmpty) changedStacks.add(after)
-                    oldInventory[i] = after
+        if (forceRefresh) {
+            changedStacks.addAll(inv)
+        } else {
+            inv.forEachIndexed { i, after ->
+                val before = oldInventory[i]
+                if (!ItemStack.areItemStacksEqual(before, after)) {
+                    val changed = !ItemStack.areItemStacksEqualUsingNBTShareTag(before, after)
+                    if (changed) {
+                        if (!before.isEmpty) changedStacks.add(before)
+                        if (!after.isEmpty) changedStacks.add(after)
+                        oldInventory[i] = after
+                    }
                 }
             }
         }

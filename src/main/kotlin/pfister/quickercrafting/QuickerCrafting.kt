@@ -1,5 +1,7 @@
 package pfister.quickercrafting
 
+import net.minecraftforge.common.config.Config
+import net.minecraftforge.common.config.ConfigManager
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.SidedProxy
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
@@ -35,6 +37,7 @@ object QuickerCrafting {
     }
     @Mod.EventHandler
     fun init(event: FMLInitializationEvent) {
+        ConfigManager.sync(MOD_ID, Config.Type.INSTANCE)
         proxy.init(event)
     }
 
@@ -47,4 +50,5 @@ object QuickerCrafting {
     fun loadComplete(event: FMLLoadCompleteEvent) {
         proxy.loadComplete(event)
     }
+
 }

@@ -3,10 +3,11 @@ package pfister.quickercrafting.client
 import net.minecraft.client.settings.KeyBinding
 import net.minecraftforge.client.settings.IKeyConflictContext
 import net.minecraftforge.client.settings.KeyModifier
+import pfister.quickercrafting.common.ConfigValues
 
 // Hooks a keybinding into another one, essentially combines them. If one is pressed then the entire keybinding is pressed.
 class KeybindingHook(private val hookedKeyBinding: KeyBinding, private val callbackKeyBinding: KeyBinding) : KeyBinding(hookedKeyBinding.keyDescription, hookedKeyBinding.keyConflictContext, hookedKeyBinding.keyCode, hookedKeyBinding.keyCategory) {
-    var IsHookEnabled = true
+    var IsHookEnabled = ConfigValues.HookCraftingKeybind
     override fun isActiveAndMatches(keyCode: Int): Boolean {
         return if (IsHookEnabled) {
             hookedKeyBinding.isActiveAndMatches(keyCode) || callbackKeyBinding.isActiveAndMatches(keyCode)

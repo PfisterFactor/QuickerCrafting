@@ -5,6 +5,8 @@ import net.minecraft.client.gui.ScaledResolution
 import net.minecraft.client.gui.inventory.GuiInventory
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.settings.KeyBinding
+import net.minecraft.init.Blocks
+import net.minecraft.util.math.BlockPos
 import net.minecraftforge.client.event.GuiContainerEvent
 import net.minecraftforge.client.event.GuiScreenEvent
 import net.minecraftforge.client.event.ModelRegistryEvent
@@ -26,7 +28,9 @@ import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
 import pfister.quickercrafting.client.gui.GuiButtonImageBiggerTexture
 import pfister.quickercrafting.client.gui.GuiQuickerCrafting
 import pfister.quickercrafting.common.CommonProxy
+import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.crafting.RecipeCache
+import pfister.quickercrafting.common.crafting.RecipeCalculator
 import pfister.quickercrafting.common.item.ModItems
 import pfister.quickercrafting.common.network.MessageOpenGUI
 import pfister.quickercrafting.common.network.PacketHandler
@@ -50,7 +54,10 @@ class ClientProxy : CommonProxy() {
     }
 
     override fun loadComplete(event: FMLLoadCompleteEvent) {
-        hookInventoryKeybind()
+        if (ConfigValues.HookCraftingKeybind) {
+            hookInventoryKeybind()
+        }
+
     }
 
     // Creates a keybinding hook and replaces the inventory keybinding with it
@@ -92,21 +99,63 @@ object ClientEventListener {
 
 
     private var tickCounter = 0
+    private var cachedTablePos: BlockPos? = null
     @JvmStatic
     @SubscribeEvent
     // Updates the recipe cache when the player is not in an inventory so the user doesnt have to wait to populate it
     // Only happens once per 20 ticks (usually every second)
-    // Todo: Make configurable
     fun onPlayerTick(event: TickEvent.PlayerTickEvent) {
+        // Todo: Make this more efficient
+        fun craftingTableInRange(): Boolean {
+            if (ConfigValues.CraftingTableRadius == 0) return false
+            if (ConfigValues.CraftingTableRadius < 0) return true
+
+            val player = Minecraft.getMinecraft().player
+            if (cachedTablePos != null && player.getDistance(cachedTablePos!!.x.toDouble(), cachedTablePos!!.y.toDouble(), cachedTablePos!!.z.toDouble()) <= ConfigValues.CraftingTableRadius) {
+                if (player.world.getBlockState(cachedTablePos!!).block == Blocks.CRAFTING_TABLE) {
+                    return true
+                } else {
+                    cachedTablePos = null
+                }
+            }
+            val mutBlockPos: BlockPos.MutableBlockPos = BlockPos.MutableBlockPos()
+            for (y: Int in 0..ConfigValues.CraftingTableRadius) {
+                for (x: Int in 0..ConfigValues.CraftingTableRadius) {
+                    for (z: Int in 0..ConfigValues.CraftingTableRadius) {
+                        mutBlockPos.setPos(player.posX.toInt() + x, player.posY.toInt() + y, player.posZ.toInt() + z)
+                        if (player.world.isBlockLoaded(mutBlockPos) && player.world.getBlockState(mutBlockPos).block == Blocks.CRAFTING_TABLE) {
+                            cachedTablePos = mutBlockPos
+                            return true
+                        }
+                        mutBlockPos.setPos(player.posX.toInt() - x, player.posY.toInt() - y, player.posZ.toInt() - z)
+                        if (player.world.isBlockLoaded(mutBlockPos) && player.world.getBlockState(mutBlockPos).block == Blocks.CRAFTING_TABLE) {
+                            cachedTablePos = mutBlockPos
+                            return true
+                        }
+                    }
+                }
+            }
+            cachedTablePos = null
+            return false
+
+        }
         if (event.side == Side.CLIENT && event.phase == TickEvent.Phase.START) {
             tickCounter += 1
-            if (tickCounter < 20) return
+            if (tickCounter < ConfigValues.RecipeCheckFrequency) return
             tickCounter = 0
             val player = Minecraft.getMinecraft().player
-            // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
-            if (player.openContainer != null && player.openContainer !is ClientContainerQuickerCrafting) {
-                RecipeCache.updateCache()
+            var old = RecipeCalculator.CanCraft3By3
+            RecipeCalculator.CanCraft3By3 = craftingTableInRange()
+            if (old != RecipeCalculator.CanCraft3By3) {
+                RecipeCache.updateCache(true, callback = { ended, recipesChanged -> (player.openContainer as? ClientContainerQuickerCrafting)?.onRecipesCalculated(ended, recipesChanged) })
+
+            } else {
+                // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
+                if (player.openContainer != null && player.openContainer !is ClientContainerQuickerCrafting) {
+                    RecipeCache.updateCache()
+                }
             }
+
         }
     }
 
@@ -115,7 +164,7 @@ object ClientEventListener {
     @SubscribeEvent
     // Adds our button to go to the quicker crafting menu in the inventory
     fun onRenderTick(event: GuiContainerEvent.DrawForeground) {
-        if (Minecraft.getMinecraft().currentScreen !is GuiInventory) return
+        if (!ConfigValues.ShouldDisplayQuickerCraftingButton || Minecraft.getMinecraft().currentScreen !is GuiInventory) return
         val inv = (Minecraft.getMinecraft().currentScreen as GuiInventory)
 
         quickerCraftingButton.x = inv.inventorySlots.inventorySlots[0].xPos
@@ -132,7 +181,7 @@ object ClientEventListener {
     @JvmStatic
     @SubscribeEvent
     fun onGuiInput(event: GuiScreenEvent.MouseInputEvent.Pre) {
-        if (Minecraft.getMinecraft().currentScreen !is GuiInventory || !Mouse.isButtonDown(0)) return
+        if (!ConfigValues.ShouldDisplayQuickerCraftingButton || Minecraft.getMinecraft().currentScreen !is GuiInventory || !Mouse.isButtonDown(0)) return
         val inv = (Minecraft.getMinecraft().currentScreen as GuiInventory)
         val scaledresolution = ScaledResolution(Minecraft.getMinecraft())
         val mouseX: Int = Mouse.getX() * scaledresolution.scaledWidth / Minecraft.getMinecraft().displayWidth

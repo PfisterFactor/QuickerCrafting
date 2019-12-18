@@ -84,10 +84,11 @@ object RecipeCalculator {
         }
     }
 
+    var CanCraft3By3: Boolean = false
     // Attempts to craft a recipe using the players inventory
     // Returns an itemmap of items it would used and a list of missing ingredients (if there are any)
     fun doCraft(inventory: CraftInventory, recipe: IRecipe): CraftingInfo {
-
+        if (!CanCraft3By3 && !recipe.canFit(2, 2)) return CraftingInfo(recipe, mapOf(), listOf())
         // A map of all the items and their amounts used in the recipe
         val usedItemMap: MutableMap<Int, Int> = mutableMapOf()
         val ingredientsLeft = recipe.ingredients.filterNot { it == Ingredient.EMPTY }.toMutableList()

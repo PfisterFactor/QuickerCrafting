@@ -154,7 +154,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         }
     }
 
-    private fun onRecipesCalculated(ended: Boolean, recipesChanged: Int) {
+    fun onRecipesCalculated(ended: Boolean, recipesChanged: Int) {
         if (ended) {
             isPopulating = false
             if (recipesChanged > 0) {
