@@ -181,9 +181,9 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     override fun initGui() {
         super.initGui()
         Scrollbar = GuiScrollBar(guiLeft, guiTop)
-        Searchfield = GuiTextField(0, fontRenderer, guiLeft + 144, guiTop + 7, 87, 9)
+        Searchfield = GuiTextField(0, fontRenderer, guiLeft + 144, guiTop + 7, 105, 9)
         ChangeMenuButton = GuiButtonImageBiggerTexture(0, guiLeft + 262, guiTop + 3, 17, 15, 492, 204, 16, GuiQuickerCrafting.TEXTURE, 512f, 256f)
-        Searchfield.maxStringLength = 50
+        Searchfield.maxStringLength = 21
         Searchfield.enableBackgroundDrawing = false
         Searchfield.setTextColor(16777215)
         Searchfield.isFocused = false
