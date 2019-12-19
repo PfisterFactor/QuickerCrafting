@@ -51,7 +51,7 @@ class MessageCraftItemHandler : IMessageHandler<MessageCraftItem, MessageSyncCon
         }
         val container = player.openContainer as ContainerQuickerCrafting
 
-        if (!player.craftingTableInRange()) {
+        if (!player.craftingTableInRange() && !message.Recipe!!.canFit(2, 2)) {
             LOG.warn("MessageCraftItemHandler: Player tried to craft an item outside range on crafting table on server. Attempting config resync...")
             return ConfigValues.generateSyncPacket()
         }
