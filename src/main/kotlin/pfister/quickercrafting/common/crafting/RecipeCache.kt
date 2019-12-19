@@ -15,6 +15,7 @@ import org.jgrapht.opt.graph.fastutil.FastutilMapIntVertexGraph
 import pfister.quickercrafting.LOG
 import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
 import pfister.quickercrafting.common.util.collection.IndexedSet
+import pfister.quickercrafting.common.util.craftingTableInRange
 import kotlin.concurrent.thread
 
 object RecipeCache {
@@ -57,6 +58,7 @@ object RecipeCache {
         }
         graph
     }
+
     @SideOnly(Side.CLIENT)
     val CraftableRecipes: IndexedSet<IRecipe> = IndexedSet(Comparator { recipe1, recipe2 ->
         val items = Item.REGISTRY
@@ -67,6 +69,18 @@ object RecipeCache {
     // 36 for the players inventory + 3 for the crafting results on the container
     @SideOnly(Side.CLIENT)
     private val oldInventory: Array<ItemStack> = Array(39) { ItemStack.EMPTY }
+
+    @SideOnly(Side.CLIENT)
+    fun check3x3Crafting(container: ClientContainerQuickerCrafting?): Boolean {
+        val player = Minecraft.getMinecraft().player
+        var old = RecipeCalculator.CanCraft3By3
+        RecipeCalculator.CanCraft3By3 = player.craftingTableInRange()
+        if (old != RecipeCalculator.CanCraft3By3) {
+            updateCache(true, callback = { ended, recipesChanged -> container?.onRecipesCalculated(ended, recipesChanged) })
+            return true
+        }
+        return false
+    }
 
     @SideOnly(Side.CLIENT)
     fun updateCache(forceRefresh: Boolean = false, callback: (Boolean, Int) -> Unit = { _, _ -> }) {
@@ -115,14 +129,11 @@ object RecipeCache {
     @SideOnly(Side.CLIENT)
     private var running_thread: Thread = Thread()
 
+    // If a job is already running, this call will block until that job is done.
+    // Otherwise there there will be weird desyncs with the potentially craftable items
     @SideOnly(Side.CLIENT)
     fun populateRecipeCache(inventory: RecipeCalculator.CraftInventory, changedStacks: List<ItemStack> = listOf(), callback: (Boolean, Int) -> Unit = { _, _ -> }) {
         if (changedStacks.isEmpty()) return
-        // Tell the thread to stop if its running
-        running_thread.interrupt()
-        // Wait for the thread to die
-        running_thread.join()
-
         // Find all the recipes that the changed item stacks are used in
         val changedRecipes: MutableSet<IRecipe> = mutableSetOf()
         changedStacks.forEach {
@@ -131,6 +142,10 @@ object RecipeCache {
                 changedRecipes.addAll(RecipeGraph.outgoingEdgesOf(RecipeItemHelper.pack(it)))
         }
         if (changedRecipes.isEmpty()) return
+
+        // Wait for the thread to die
+        running_thread.join()
+
         // Remove only the recipes affected by the changed items
         running_thread = thread(isDaemon = true) {
             var counter = 0

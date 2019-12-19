@@ -28,11 +28,9 @@ import pfister.quickercrafting.client.gui.GuiQuickerCrafting
 import pfister.quickercrafting.common.CommonProxy
 import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.crafting.RecipeCache
-import pfister.quickercrafting.common.crafting.RecipeCalculator
 import pfister.quickercrafting.common.item.ModItems
 import pfister.quickercrafting.common.network.MessageOpenGUI
 import pfister.quickercrafting.common.network.PacketHandler
-import pfister.quickercrafting.common.util.craftingTableInRange
 import kotlin.system.measureTimeMillis
 
 class ClientProxy : CommonProxy() {
@@ -108,18 +106,10 @@ object ClientEventListener {
             if (tickCounter < ConfigValues.RecipeCheckFrequency) return
             tickCounter = 0
             val player = Minecraft.getMinecraft().player
-            var old = RecipeCalculator.CanCraft3By3
-            RecipeCalculator.CanCraft3By3 = player.craftingTableInRange()
-            if (old != RecipeCalculator.CanCraft3By3) {
-                RecipeCache.updateCache(true, callback = { ended, recipesChanged -> (player.openContainer as? ClientContainerQuickerCrafting)?.onRecipesCalculated(ended, recipesChanged) })
-
-            } else {
-                // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
-                if (player.openContainer != null && player.openContainer !is ClientContainerQuickerCrafting) {
-                    RecipeCache.updateCache()
-                }
+            // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
+            if (player.openContainer == null || player.openContainer !is ClientContainerQuickerCrafting) {
+                RecipeCache.updateCache()
             }
-
         }
     }
 

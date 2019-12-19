@@ -70,6 +70,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         }
         // Setup things like the search tree, scroll bar,
         onRecipesCalculated(true, 1)
+        RecipeCache.check3x3Crafting(this)
     }
 
     // Called after populate recipes is done. So we don't reset the scrollbar after every crafting because craftableRecipes isn't fully populated.
@@ -98,6 +99,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             }
         }
 
+        RecipeCache.check3x3Crafting(this)
         inventorySlots
                 .drop(ClientSlotsStart)
                 .map { it as ClientSlot }
