@@ -9,8 +9,10 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext
 import net.minecraftforge.fml.common.registry.ForgeRegistries
 import pfister.quickercrafting.LOG
+import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.crafting.CraftHandler
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
+import pfister.quickercrafting.common.util.craftingTableInRange
 
 class MessageCraftItem(var Recipe: IRecipe?, var Shift: Boolean = false) : IMessage {
     @Suppress("unused")
@@ -35,8 +37,8 @@ class MessageCraftItem(var Recipe: IRecipe?, var Shift: Boolean = false) : IMess
 
 }
 
-class MessageCraftItemHandler : IMessageHandler<MessageCraftItem, IMessage> {
-    override fun onMessage(message: MessageCraftItem?, ctx: MessageContext?): IMessage? {
+class MessageCraftItemHandler : IMessageHandler<MessageCraftItem, MessageSyncConfig> {
+    override fun onMessage(message: MessageCraftItem?, ctx: MessageContext?): MessageSyncConfig? {
         if (message?.Recipe == null) {
             LOG.warn("MessageCraftItemHandler: Recipes '${message?.recipeString}' cannot be found.")
             return null
@@ -47,8 +49,12 @@ class MessageCraftItemHandler : IMessageHandler<MessageCraftItem, IMessage> {
             LOG.warn("MessageCraftItemHandler: ContainerQuickerCrafting is not open on the server.")
             return null
         }
-
         val container = player.openContainer as ContainerQuickerCrafting
+
+        if (!player.craftingTableInRange()) {
+            LOG.warn("MessageCraftItemHandler: Player tried to craft an item outside range on crafting table on server. Attempting config resync...")
+            return ConfigValues.generateSyncPacket()
+        }
         CraftHandler.tryCraftRecipe(container, message.Recipe!!, message.Shift)
         return null
     }

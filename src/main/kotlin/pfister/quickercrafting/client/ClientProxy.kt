@@ -5,8 +5,6 @@ import net.minecraft.client.gui.ScaledResolution
 import net.minecraft.client.gui.inventory.GuiInventory
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.settings.KeyBinding
-import net.minecraft.init.Blocks
-import net.minecraft.util.math.BlockPos
 import net.minecraftforge.client.event.GuiContainerEvent
 import net.minecraftforge.client.event.GuiScreenEvent
 import net.minecraftforge.client.event.ModelRegistryEvent
@@ -34,6 +32,7 @@ import pfister.quickercrafting.common.crafting.RecipeCalculator
 import pfister.quickercrafting.common.item.ModItems
 import pfister.quickercrafting.common.network.MessageOpenGUI
 import pfister.quickercrafting.common.network.PacketHandler
+import pfister.quickercrafting.common.util.craftingTableInRange
 import kotlin.system.measureTimeMillis
 
 class ClientProxy : CommonProxy() {
@@ -99,53 +98,18 @@ object ClientEventListener {
 
 
     private var tickCounter = 0
-    private var cachedTablePos: BlockPos? = null
     @JvmStatic
     @SubscribeEvent
     // Updates the recipe cache when the player is not in an inventory so the user doesnt have to wait to populate it
     // Only happens once per 20 ticks (usually every second)
     fun onPlayerTick(event: TickEvent.PlayerTickEvent) {
-        // Todo: Make this more efficient
-        fun craftingTableInRange(): Boolean {
-            if (ConfigValues.CraftingTableRadius == 0) return false
-            if (ConfigValues.CraftingTableRadius < 0) return true
-
-            val player = Minecraft.getMinecraft().player
-            if (cachedTablePos != null && player.getDistance(cachedTablePos!!.x.toDouble(), cachedTablePos!!.y.toDouble(), cachedTablePos!!.z.toDouble()) <= ConfigValues.CraftingTableRadius) {
-                if (player.world.getBlockState(cachedTablePos!!).block == Blocks.CRAFTING_TABLE) {
-                    return true
-                } else {
-                    cachedTablePos = null
-                }
-            }
-            val mutBlockPos: BlockPos.MutableBlockPos = BlockPos.MutableBlockPos()
-            for (y: Int in 0..ConfigValues.CraftingTableRadius) {
-                for (x: Int in 0..ConfigValues.CraftingTableRadius) {
-                    for (z: Int in 0..ConfigValues.CraftingTableRadius) {
-                        mutBlockPos.setPos(player.posX.toInt() + x, player.posY.toInt() + y, player.posZ.toInt() + z)
-                        if (player.world.isBlockLoaded(mutBlockPos) && player.world.getBlockState(mutBlockPos).block == Blocks.CRAFTING_TABLE) {
-                            cachedTablePos = mutBlockPos
-                            return true
-                        }
-                        mutBlockPos.setPos(player.posX.toInt() - x, player.posY.toInt() - y, player.posZ.toInt() - z)
-                        if (player.world.isBlockLoaded(mutBlockPos) && player.world.getBlockState(mutBlockPos).block == Blocks.CRAFTING_TABLE) {
-                            cachedTablePos = mutBlockPos
-                            return true
-                        }
-                    }
-                }
-            }
-            cachedTablePos = null
-            return false
-
-        }
         if (event.side == Side.CLIENT && event.phase == TickEvent.Phase.START) {
             tickCounter += 1
             if (tickCounter < ConfigValues.RecipeCheckFrequency) return
             tickCounter = 0
             val player = Minecraft.getMinecraft().player
             var old = RecipeCalculator.CanCraft3By3
-            RecipeCalculator.CanCraft3By3 = craftingTableInRange()
+            RecipeCalculator.CanCraft3By3 = player.craftingTableInRange()
             if (old != RecipeCalculator.CanCraft3By3) {
                 RecipeCache.updateCache(true, callback = { ended, recipesChanged -> (player.openContainer as? ClientContainerQuickerCrafting)?.onRecipesCalculated(ended, recipesChanged) })
 

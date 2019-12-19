@@ -11,5 +11,6 @@ object PacketHandler {
     fun registerMessages() {
         INSTANCE.registerMessage(MessageCraftItemHandler::class.java, MessageCraftItem::class.java, 0, Side.SERVER)
         INSTANCE.registerMessage(MessageOpenGUIHandler::class.java, MessageOpenGUI::class.java, 1, Side.SERVER)
+        INSTANCE.registerMessage(MessageSyncConfigHandler::class.java, MessageSyncConfig::class.java, 2, Side.CLIENT)
     }
 }
