@@ -11,6 +11,7 @@ import net.minecraft.util.NonNullList
 import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.relauncher.Side
 import net.minecraftforge.fml.relauncher.SideOnly
+import pfister.quickercrafting.LOG
 import pfister.quickercrafting.common.crafting.RecipeCache
 import pfister.quickercrafting.common.crafting.RecipeCache.CraftableRecipes
 import pfister.quickercrafting.common.crafting.RecipeList
@@ -51,7 +52,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     private var searchTree: SearchTree = SearchTree()
     var shouldDisplayScrollbar = false
     var currentSearchQuery: String = ""
-    var isPopulating: Boolean = false
+
     // The recipes that match our search query, if the search is empty its the same as craftableRecipes
     @Suppress("RemoveExplicitTypeArguments")
     private var displayedRecipes: IndexedSet<RecipeList> = IndexedSet(Comparator<RecipeList> { rl1, rl2 ->
@@ -90,11 +91,11 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 slot.Recipes = recipes
             } else {
                 slot.putStack(ItemStack.EMPTY)
-                slot.State = if (isPopulating) SlotState.POPULATING else SlotState.DISABLED
+                slot.State = if (RecipeCache.isPopulating) SlotState.POPULATING else SlotState.DISABLED
                 slot.Recipes = null
                 slot.RecipeIndex = 0
             }
-            if (slot.State != SlotState.DISABLED && !forceRefresh && !isPopulating && recipes == slotUnderMouse?.Recipes) {
+            if (slot.State != SlotState.DISABLED && !forceRefresh && !RecipeCache.isPopulating && recipes == slotUnderMouse?.Recipes) {
                 slot.State = SlotState.EMPTY
             }
         }
@@ -158,7 +159,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
     fun onRecipesCalculated(ended: Boolean, recipesChanged: Int) {
         if (ended) {
-            isPopulating = false
+            LOG.info(recipesChanged)
             if (recipesChanged > 0) {
                 // Build search tree
                 searchTree = SearchTree()
@@ -179,7 +180,6 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 checkScrollbar()
             }
         } else {
-            isPopulating = true
             checkScrollbar()
         }
     }

@@ -5,8 +5,10 @@ import net.minecraft.init.Blocks
 import net.minecraft.inventory.InventoryBasic
 import net.minecraft.item.ItemStack
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.MathHelper
 import pfister.quickercrafting.common.ConfigValues
 import kotlin.math.min
+
 
 // Returns true if two itemstacks can stack
 fun ItemStack.canStack(other: ItemStack): Boolean {
@@ -71,17 +73,16 @@ fun EntityPlayer.craftingTableInRange(): Boolean {
             cachedTablePos = null
         }
     }
+    val blockX: Int = MathHelper.floor(this.posX)
+    val blockY: Int = MathHelper.floor(this.posY)
+    val blockZ: Int = MathHelper.floor(this.posZ)
+
     val mutBlockPos: BlockPos.MutableBlockPos = BlockPos.MutableBlockPos()
-    for (y: Int in 0..ConfigValues.CraftingTableRadius) {
-        for (x: Int in 0..ConfigValues.CraftingTableRadius) {
-            for (z: Int in 0..ConfigValues.CraftingTableRadius) {
-                mutBlockPos.setPos(this.posX.toInt() + x, this.posY.toInt() + y, this.posZ.toInt() + z)
-                if (this.world.isBlockLoaded(mutBlockPos) && this.world.getBlockState(mutBlockPos).block == Blocks.CRAFTING_TABLE) {
-                    cachedTablePos = mutBlockPos
-                    return true
-                }
-                mutBlockPos.setPos(this.posX.toInt() - x, this.posY.toInt() - y, this.posZ.toInt() - z)
-                if (this.world.isBlockLoaded(mutBlockPos) && this.world.getBlockState(mutBlockPos).block == Blocks.CRAFTING_TABLE) {
+    for (y: Int in -ConfigValues.CraftingTableRadius..ConfigValues.CraftingTableRadius) {
+        for (x: Int in -ConfigValues.CraftingTableRadius..ConfigValues.CraftingTableRadius) {
+            for (z: Int in -ConfigValues.CraftingTableRadius..ConfigValues.CraftingTableRadius) {
+                mutBlockPos.setPos(blockX + x, blockY + y, blockZ + z)
+                if (this.world.isBlockLoaded(mutBlockPos) && this.world.getBlockState(mutBlockPos).block == Blocks.CRAFTING_TABLE && mutBlockPos.getDistance(blockX, blockY, blockZ) <= ConfigValues.CraftingTableRadius) {
                     cachedTablePos = mutBlockPos
                     return true
                 }

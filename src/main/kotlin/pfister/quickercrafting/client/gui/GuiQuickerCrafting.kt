@@ -210,7 +210,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         if (!checkHotbarKeys(keyCode)) {
             if (Searchfield.textboxKeyTyped(typedChar, keyCode)) {
                 val slots = (inventorySlots as ClientContainerQuickerCrafting)
-                slots.handleSearch(Searchfield.text)
+                slots.handleSearch(Searchfield.text.toLowerCase())
                 slots.updateDisplay(Scrollbar.currentScroll, null, true)
             } else {
                 when (keyCode) {
@@ -336,7 +336,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         this.mc.textureManager.bindTexture(TEXTURE)
-        if (Scrollbar.isEnabled || (inventorySlots as ClientContainerQuickerCrafting).isPopulating) {
+        if (Scrollbar.isEnabled || RecipeCache.isPopulating) {
             Gui.drawModalRectWithCustomSizedTexture(
                     GuiScrollBar.GUI_POS_X,
                     MathHelper.clamp(GuiScrollBar.GUI_POS_Y - GuiScrollBar.TEX_HEIGHT / 2 + (GuiScrollBar.SCROLLBAR_HEIGHT * Scrollbar.currentScroll).toInt(), GuiScrollBar.GUI_POS_Y, GuiScrollBar.GUI_POS_Y + GuiScrollBar.SCROLLBAR_HEIGHT - GuiScrollBar.TEX_HEIGHT - 1
@@ -356,7 +356,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
                     GuiScrollBar.TEX_WIDTH,
                     GuiScrollBar.TEX_HEIGHT, 512f, 256f
             )
-            if (!(inventorySlots as ClientContainerQuickerCrafting).isPopulating) {
+            if (!RecipeCache.isPopulating) {
                 Scrollbar.currentScroll = 0.0
             }
         }
