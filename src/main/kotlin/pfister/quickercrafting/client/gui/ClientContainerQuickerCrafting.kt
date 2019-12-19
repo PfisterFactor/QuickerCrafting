@@ -11,7 +11,6 @@ import net.minecraft.util.NonNullList
 import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.relauncher.Side
 import net.minecraftforge.fml.relauncher.SideOnly
-import pfister.quickercrafting.LOG
 import pfister.quickercrafting.common.crafting.RecipeCache
 import pfister.quickercrafting.common.crafting.RecipeCache.CraftableRecipes
 import pfister.quickercrafting.common.crafting.RecipeList
@@ -159,7 +158,6 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
     fun onRecipesCalculated(ended: Boolean, recipesChanged: Int) {
         if (ended) {
-            LOG.info(recipesChanged)
             if (recipesChanged > 0) {
                 // Build search tree
                 searchTree = SearchTree()
