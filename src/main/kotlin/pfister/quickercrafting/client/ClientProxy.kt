@@ -8,6 +8,7 @@ import net.minecraft.client.settings.KeyBinding
 import net.minecraftforge.client.event.GuiContainerEvent
 import net.minecraftforge.client.event.GuiScreenEvent
 import net.minecraftforge.client.event.ModelRegistryEvent
+import net.minecraftforge.client.settings.KeyModifier
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
@@ -69,6 +70,10 @@ class ClientProxy : CommonProxy() {
         } else {
             LOG.warn("ClientProxy: There was an issue finding the inventory keybinding (${settings.keyBindInventory}) within the keybinding array, could not install hook!")
         }
+        if (ClientEventListener.InvKeyBinding.isSetToDefaultValue && settings.keyBindInventory.isSetToDefaultValue) {
+            settings.keyBindInventory.setKeyModifierAndCode(KeyModifier.NONE, Keyboard.KEY_NONE)
+        }
+
     }
 
 
