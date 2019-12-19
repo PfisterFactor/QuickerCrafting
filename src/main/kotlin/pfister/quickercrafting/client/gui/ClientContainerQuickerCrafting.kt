@@ -91,11 +91,11 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 slot.Recipes = recipes
             } else {
                 slot.putStack(ItemStack.EMPTY)
-                slot.State = if (RecipeCache.isPopulating) SlotState.POPULATING else SlotState.DISABLED
+                slot.State = if (RecipeCache.isPopulating()) SlotState.POPULATING else SlotState.DISABLED
                 slot.Recipes = null
                 slot.RecipeIndex = 0
             }
-            if (slot.State != SlotState.DISABLED && !forceRefresh && !RecipeCache.isPopulating && recipes == slotUnderMouse?.Recipes) {
+            if (slot.State != SlotState.DISABLED && !forceRefresh && !RecipeCache.isPopulating() && recipes == slotUnderMouse?.Recipes) {
                 slot.State = SlotState.EMPTY
             }
         }

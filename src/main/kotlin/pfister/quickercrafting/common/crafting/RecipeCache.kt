@@ -14,7 +14,6 @@ import org.jgrapht.graph.builder.GraphTypeBuilder
 import org.jgrapht.opt.graph.fastutil.FastutilMapIntVertexGraph
 import pfister.quickercrafting.LOG
 import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
-import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.util.collection.IndexedSet
 import pfister.quickercrafting.common.util.craftingTableInRange
 import kotlin.concurrent.thread
@@ -69,33 +68,35 @@ object RecipeCache {
     })
 
 
-    var isPopulating: Boolean = false
-        private set
+    fun isPopulating(): Boolean = running_thread.isAlive
 
     // 36 for the players inventory + 3 for the crafting results on the container
     @SideOnly(Side.CLIENT)
-    private val oldInventory: Array<ItemStack> = Array(39) { ItemStack.EMPTY }
+    private var oldInventory: Array<ItemStack> = Array(39) { ItemStack.EMPTY }
 
     @SideOnly(Side.CLIENT)
     // Returns true if there was a change in CanCraft3By3
     fun check3x3Crafting(container: ClientContainerQuickerCrafting?): Boolean {
-        if (ConfigValues.CraftingTableRadius == -1 || running_thread.isAlive) return false
+        if (isPopulating()) return false
         val player = Minecraft.getMinecraft().player
-        var old = RecipeCalculator.CanCraft3By3
-        RecipeCalculator.CanCraft3By3 = player.craftingTableInRange()
+        val tableInRange = player.craftingTableInRange()
+        val changed = RecipeCalculator.CanCraft3By3 != tableInRange
 
-        if (old != RecipeCalculator.CanCraft3By3) {
-            if (RecipeCalculator.CanCraft3By3) {
-                updateCache(true, callback = { ended, recipesChanged -> container?.onRecipesCalculated(ended, recipesChanged) })
+        if (changed) {
+            if (tableInRange) {
+                RecipeCalculator.CanCraft3By3 = true
+                updateCache(true, callback = { ended, recipesChanged ->
+                    container?.onRecipesCalculated(ended, recipesChanged)
+                })
             } else {
+                RecipeCalculator.CanCraft3By3 = false
                 var diff = CraftableRecipes.size
                 CraftableRecipes.removeIf { !it.canFit(2, 2) }
                 diff -= CraftableRecipes.size
                 container?.onRecipesCalculated(true, diff)
             }
-            return true
         }
-        return false
+        return changed
     }
 
 
@@ -113,20 +114,19 @@ object RecipeCache {
             oldInventory[38] = ItemStack.EMPTY
             (player.inventory.mainInventory.drop(9) + player.inventory.mainInventory.take(9)).toTypedArray()
         }
-
-        val changedStacks: MutableList<ItemStack> = mutableListOf()
         if (forceRefresh) {
-            changedStacks.addAll(inv)
-        } else {
-            inv.forEachIndexed { i, after ->
-                val before = oldInventory[i]
-                if (!ItemStack.areItemStacksEqual(before, after)) {
-                    val changed = !ItemStack.areItemStacksEqualUsingNBTShareTag(before, after)
-                    if (changed) {
-                        if (!before.isEmpty) changedStacks.add(before)
-                        if (!after.isEmpty) changedStacks.add(after)
-                        oldInventory[i] = after
-                    }
+            oldInventory = Array(39) { ItemStack.EMPTY }
+        }
+        val changedStacks: MutableList<ItemStack> = mutableListOf()
+
+        inv.forEachIndexed { i, after ->
+            val before = oldInventory[i]
+            if (!ItemStack.areItemStacksEqual(before, after)) {
+                val changed = !ItemStack.areItemStacksEqualUsingNBTShareTag(before, after)
+                if (changed) {
+                    if (!before.isEmpty) changedStacks.add(before)
+                    if (!after.isEmpty) changedStacks.add(after)
+                    oldInventory[i] = after
                 }
             }
         }
@@ -152,6 +152,7 @@ object RecipeCache {
     fun populateRecipeCache(inventory: RecipeCalculator.CraftInventory, changedStacks: List<ItemStack> = listOf(), callback: (Boolean, Int) -> Unit = { _, _ -> }) {
         if (changedStacks.isEmpty()) return
         // Find all the recipes that the changed item stacks are used in
+
         val changedRecipes: MutableSet<IRecipe> = mutableSetOf()
         changedStacks.forEach {
             val packed = RecipeItemHelper.pack(it)
@@ -160,14 +161,10 @@ object RecipeCache {
         }
         if (changedRecipes.isEmpty()) return
 
-        if (running_thread.isAlive) {
-            LOG.info("Running thread alive")
-        }
         // Wait for the thread to die
         running_thread.join()
 
         // Remove only the recipes affected by the changed items
-        isPopulating = true
         running_thread = thread(isDaemon = true) {
             var counter = 0
             CraftableRecipes.removeIf { recipe ->
@@ -182,7 +179,6 @@ object RecipeCache {
                     callback(false, counter)
                 }
             }
-            isPopulating = false
             callback(true, counter)
         }
     }

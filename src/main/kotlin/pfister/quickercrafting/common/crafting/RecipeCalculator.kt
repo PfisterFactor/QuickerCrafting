@@ -84,7 +84,7 @@ object RecipeCalculator {
         }
     }
 
-    var CanCraft3By3: Boolean = false
+    var CanCraft3By3: Boolean = true
     // Attempts to craft a recipe using the players inventory
     // Returns an itemmap of items it would used and a list of missing ingredients (if there are any)
     fun doCraft(inventory: CraftInventory, recipe: IRecipe): CraftingInfo {
