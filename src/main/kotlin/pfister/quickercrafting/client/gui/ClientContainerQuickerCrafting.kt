@@ -1,9 +1,9 @@
 package pfister.quickercrafting.client.gui
 
+import invtweaks.api.container.IgnoreContainer
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
-import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
 import net.minecraft.util.NonNullList
@@ -23,6 +23,7 @@ enum class SlotState {
 }
 
 @SideOnly(Side.CLIENT)
+
 class ClientSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : NoDragSlot(inv, index, xPos, yPos) {
     var State: SlotState = SlotState.EMPTY
     var Recipe: IRecipe? = null
@@ -31,25 +32,20 @@ class ClientSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : NoDragSlot
 }
 
 @SideOnly(Side.CLIENT)
+@IgnoreContainer
 class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuickerCrafting(true, playerInv) {
     companion object {
         const val ROW_LENGTH = 9
-        val RecipeComparator = Comparator<IRecipe> { r1, r2 ->
-            val items = Item.REGISTRY
-            val r1 = items.indexOfFirst { r1.recipeOutput.item == it }
-            val r2 = items.indexOfFirst { r2.recipeOutput.item == it }
-            r1 - r2
-        }
         // The recipes that match our search query, if the search is empty its the same as craftableRecipes
         var displayedRecipes: List<IRecipe> = listOf()
     }
     val ClientSlotsStart: Int = inventorySlots.size
 
     // Stores all the recipes
-    val recipeInventory = InventoryBasic("", false, 27)
+    private val recipeInventory = InventoryBasic("", false, 27)
     var shouldDisplayScrollbar = false
     var currentSearchQuery: String = ""
-    var recipesJustCalculated = false
+    private var recipesJustCalculated = false
     private var slotRowYOffset = 0
 
     init {

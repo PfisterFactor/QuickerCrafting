@@ -2,6 +2,7 @@ package pfister.quickercrafting
 
 import net.minecraftforge.common.config.Config
 import net.minecraftforge.common.config.ConfigManager
+import net.minecraftforge.fml.common.Loader
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.SidedProxy
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
@@ -30,11 +31,15 @@ object QuickerCrafting {
     // Reference to our proxy
     private lateinit var proxy: CommonProxy
 
+    var IsInvTweaksLoaded = false
+        private set
+
     @Mod.EventHandler
     fun preInit(event: FMLPreInitializationEvent) {
         LOG = event.modLog
         proxy.preInit(event)
     }
+
     @Mod.EventHandler
     fun init(event: FMLInitializationEvent) {
         ConfigManager.sync(MOD_ID, Config.Type.INSTANCE)
@@ -48,6 +53,7 @@ object QuickerCrafting {
 
     @Mod.EventHandler
     fun loadComplete(event: FMLLoadCompleteEvent) {
+        IsInvTweaksLoaded = Loader.isModLoaded("inventorytweaks")
         proxy.loadComplete(event)
     }
 
