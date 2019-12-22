@@ -113,7 +113,10 @@ object ClientEventListener {
             val player = Minecraft.getMinecraft().player
             // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
             if ((player.openContainer == null || player.openContainer !is ClientContainerQuickerCrafting) && !RecipeCache.isPopulating()) {
-                RecipeCache.updateCache()
+                RecipeCache.updateCache(false) { ended, _ ->
+                    if (!ended) return@updateCache
+                    ClientContainerQuickerCrafting.displayedRecipes = RecipeCache.CraftableRecipes
+                }
             }
         }
     }

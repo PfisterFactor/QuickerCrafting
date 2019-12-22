@@ -3,10 +3,12 @@ package pfister.quickercrafting.common.crafting
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet
 import it.unimi.dsi.fastutil.ints.IntSet
 import net.minecraft.client.Minecraft
+import net.minecraft.client.util.ITooltipFlag
 import net.minecraft.client.util.RecipeItemHelper
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
+import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.common.registry.ForgeRegistries
 import net.minecraftforge.fml.relauncher.Side
 import net.minecraftforge.fml.relauncher.SideOnly
@@ -14,9 +16,13 @@ import org.jgrapht.graph.builder.GraphTypeBuilder
 import org.jgrapht.opt.graph.fastutil.FastutilMapIntVertexGraph
 import pfister.quickercrafting.LOG
 import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
-import pfister.quickercrafting.common.util.collection.IndexedSet
+import pfister.quickercrafting.common.util.collection.SearchTree
 import pfister.quickercrafting.common.util.craftingTableInRange
+import java.util.*
+import kotlin.Comparator
+import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
+import kotlin.system.measureTimeMillis
 
 object RecipeCache {
     // Finds all items used in recipes plus their outputs
@@ -58,21 +64,37 @@ object RecipeCache {
         }
         graph
     }
-
     @SideOnly(Side.CLIENT)
-    val CraftableRecipes: IndexedSet<IRecipe> = IndexedSet(Comparator { recipe1, recipe2 ->
+    val CraftableRecipes: ArrayList<IRecipe> = ArrayList(ForgeRegistries.RECIPES.entries.size)
+    private val sortingComparator = Comparator<IRecipe> { recipe1, recipe2 ->
         val items = Item.REGISTRY
         val r1 = items.indexOfFirst { recipe1.recipeOutput.item == it }
         val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
         r1 - r2
-    })
+    }
 
+    @SideOnly(Side.CLIENT)
+    private var running_thread: Thread = Thread()
 
     fun isPopulating(): Boolean = running_thread.isAlive
 
     // 36 for the players inventory + 3 for the crafting results on the container
     @SideOnly(Side.CLIENT)
     private var oldInventory: Array<ItemStack> = Array(39) { ItemStack.EMPTY }
+
+    // Suffix tree used for searching -- courtesy of JEI
+    var SearchTree: SearchTree = SearchTree()
+        private set
+
+    private fun rebuildSearchTree() {
+        SearchTree = SearchTree()
+        CraftableRecipes.forEach { recipe ->
+            SearchTree.putGrouping((recipe.recipeOutput.getTooltip(Minecraft.getMinecraft().player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
+                TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
+            }))
+        }
+    }
+
 
     @SideOnly(Side.CLIENT)
     // Returns true if there was a change in CanCraft3By3
@@ -143,9 +165,6 @@ object RecipeCache {
         populateRecipeCache(craftInv, changedStacks, callback)
     }
 
-    @SideOnly(Side.CLIENT)
-    private var running_thread: Thread = Thread()
-
     // If a job is already running, this call will block until that job is done.
     // Otherwise there there will be weird desyncs with the potentially craftable items
     @SideOnly(Side.CLIENT)
@@ -167,18 +186,26 @@ object RecipeCache {
         // Remove only the recipes affected by the changed items
         running_thread = thread(isDaemon = true) {
             var counter = 0
-            CraftableRecipes.removeIf { recipe ->
-                val result = changedRecipes.any { ItemStack.areItemsEqual(recipe.recipeOutput, it.recipeOutput) }
-                if (result) counter += 1
-                result
-            }
-            changedRecipes.forEach { recipe ->
-                if (RecipeCalculator.canCraft(inventory, recipe)) {
-                    CraftableRecipes.add(recipe)
-                    counter += 1
-                    callback(false, counter)
+            println("Changed recipes size: " + changedRecipes.size)
+            println("Removing took " + measureTimeMillis {
+                CraftableRecipes.removeIf { recipe ->
+                    val result = changedRecipes.any { ItemStack.areItemsEqual(recipe.recipeOutput, it.recipeOutput) }
+                    if (result) counter += 1
+                    result
                 }
-            }
+            })
+
+            println("Adding took " + measureTimeMillis {
+                changedRecipes.forEach { recipe ->
+                    if (RecipeCalculator.canCraft(inventory, recipe)) {
+                        CraftableRecipes.add(recipe)
+                        counter += 1
+                        callback(false, counter)
+                    }
+                }
+            })
+            CraftableRecipes.sortWith(sortingComparator)
+            rebuildSearchTree()
             callback(true, counter)
         }
     }

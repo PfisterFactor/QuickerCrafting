@@ -225,7 +225,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     override fun handleMouseInput() {
         super.handleMouseInput()
         var i = Mouse.getDWheel()
-        if (i != 0 && Scrollbar.isEnabled) {
+        if (i != 0 && Scrollbar.isEnabled && !RecipeCache.isPopulating()) {
             val rows = (RecipeCache.CraftableRecipes.size + 8) / 9
             if (i > 0) i = 1
             else if (i < 0) i = -1
@@ -238,9 +238,6 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
         super.mouseClicked(mouseX, mouseY, mouseButton)
         val slot = slotUnderMouse
-        if (slot != null && slot is ClientSlot && mouseButton == 1) {
-            slot.RecipeIndex = (slot.RecipeIndex + 1) % (slot.Recipes?.size ?: 1)
-        }
         Searchfield.mouseClicked(mouseX, mouseY, mouseButton)
         if (ChangeMenuButton.mousePressed(Minecraft.getMinecraft(), mouseX, mouseY)) {
             ChangeMenuButton.playPressSound(Minecraft.getMinecraft().soundHandler)
@@ -306,7 +303,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         ChangeMenuButton.drawButton(Minecraft.getMinecraft(), mouseX, mouseY, partialTicks)
         GlStateManager.enableLighting()
         hoveredCraftingInfo = if (slotUnderMouse != null && slotUnderMouse is ClientSlot) {
-            val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipes?.get((slotUnderMouse as ClientSlot).RecipeIndex)
+            val recipe: IRecipe? = (slotUnderMouse as ClientSlot).Recipe
             if (recipe != null) {
                 if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
                     RecipeCalculator.CraftingPath.shiftCraftRecipe((inventorySlots as ContainerQuickerCrafting).getCraftInventory(), recipe)

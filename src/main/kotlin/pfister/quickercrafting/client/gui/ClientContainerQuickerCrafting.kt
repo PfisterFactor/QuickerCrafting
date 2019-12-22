@@ -1,25 +1,18 @@
 package pfister.quickercrafting.client.gui
 
-import net.minecraft.client.Minecraft
-import net.minecraft.client.util.ITooltipFlag
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
+import net.minecraft.item.crafting.IRecipe
 import net.minecraft.util.NonNullList
-import net.minecraft.util.text.TextFormatting
 import net.minecraftforge.fml.relauncher.Side
 import net.minecraftforge.fml.relauncher.SideOnly
 import pfister.quickercrafting.common.crafting.RecipeCache
 import pfister.quickercrafting.common.crafting.RecipeCache.CraftableRecipes
-import pfister.quickercrafting.common.crafting.RecipeList
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.gui.NoDragSlot
-import pfister.quickercrafting.common.util.collection.IndexedSet
-import pfister.quickercrafting.common.util.collection.SearchTree
-import java.util.Locale
-import kotlin.Comparator
 
 
 enum class SlotState {
@@ -32,8 +25,7 @@ enum class SlotState {
 @SideOnly(Side.CLIENT)
 class ClientSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : NoDragSlot(inv, index, xPos, yPos) {
     var State: SlotState = SlotState.EMPTY
-    var Recipes: RecipeList? = null
-    var RecipeIndex: Int = 0
+    var Recipe: IRecipe? = null
 
     override fun isEnabled(): Boolean = State == SlotState.ENABLED || State == SlotState.EMPTY
 }
@@ -42,24 +34,22 @@ class ClientSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : NoDragSlot
 class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuickerCrafting(true, playerInv) {
     companion object {
         const val ROW_LENGTH = 9
+        val RecipeComparator = Comparator<IRecipe> { r1, r2 ->
+            val items = Item.REGISTRY
+            val r1 = items.indexOfFirst { r1.recipeOutput.item == it }
+            val r2 = items.indexOfFirst { r2.recipeOutput.item == it }
+            r1 - r2
+        }
+        // The recipes that match our search query, if the search is empty its the same as craftableRecipes
+        var displayedRecipes: List<IRecipe> = listOf()
     }
     val ClientSlotsStart: Int = inventorySlots.size
 
     // Stores all the recipes
     val recipeInventory = InventoryBasic("", false, 27)
-    // Suffix tree used for searching -- courtesy of JEI
-    private var searchTree: SearchTree = SearchTree()
     var shouldDisplayScrollbar = false
     var currentSearchQuery: String = ""
-
-    // The recipes that match our search query, if the search is empty its the same as craftableRecipes
-    @Suppress("RemoveExplicitTypeArguments")
-    private var displayedRecipes: IndexedSet<RecipeList> = IndexedSet(Comparator<RecipeList> { rl1, rl2 ->
-        val items = Item.REGISTRY
-        val r1 = items.indexOfFirst { rl1.first().recipeOutput.item == it }
-        val r2 = items.indexOfFirst { rl2.first().recipeOutput.item == it }
-        r1 - r2
-    })
+    var recipesJustCalculated = false
     private var slotRowYOffset = 0
 
     init {
@@ -69,8 +59,10 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             }
         }
         // Setup things like the search tree, scroll bar,
-        onRecipesCalculated(true, 1)
+        //onRecipesCalculated(true, 1)
         RecipeCache.check3x3Crafting(this)
+        checkScrollbar()
+
     }
 
     // Called after populate recipes is done. So we don't reset the scrollbar after every crafting because craftableRecipes isn't fully populated.
@@ -83,22 +75,25 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         val rows = (length + (ROW_LENGTH - 1)) / ROW_LENGTH - 3
         slotRowYOffset = ((currentScroll * rows.toDouble()) + 0.5).toInt()
         fun updateSlot(slot: ClientSlot) {
-            val recipes = displayedRecipes.getOrNull(slotRowYOffset * ROW_LENGTH + slot.slotNumber - ClientSlotsStart)
-            if (recipes != null) {
-                slot.putStack(recipes[slot.RecipeIndex].recipeOutput)
+            val recipe = displayedRecipes.getOrNull(slotRowYOffset * ROW_LENGTH + slot.slotNumber - ClientSlotsStart)
+            if (recipe != null) {
+                slot.putStack(recipe.recipeOutput)
                 slot.State = SlotState.ENABLED
-                slot.Recipes = recipes
+                slot.Recipe = recipe
             } else {
                 slot.putStack(ItemStack.EMPTY)
                 slot.State = if (RecipeCache.isPopulating()) SlotState.POPULATING else SlotState.DISABLED
-                slot.Recipes = null
-                slot.RecipeIndex = 0
+                slot.Recipe = null
             }
-            if (slot.State != SlotState.DISABLED && !forceRefresh && !RecipeCache.isPopulating() && recipes == slotUnderMouse?.Recipes) {
+            if (slot.State != SlotState.DISABLED && !forceRefresh && !RecipeCache.isPopulating() && recipe == slotUnderMouse?.Recipe) {
                 slot.State = SlotState.EMPTY
             }
         }
 
+        if (recipesJustCalculated) {
+            handleSearch(currentSearchQuery)
+            recipesJustCalculated = false
+        }
         RecipeCache.check3x3Crafting(this)
         inventorySlots
                 .drop(ClientSlotsStart)
@@ -110,7 +105,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                     updateSlot(slot)
                 }
         if (slotUnderMouse != null && slotUnderMouse.State != SlotState.DISABLED) {
-            if (slotUnderMouse.Recipes?.any { CraftableRecipes.contains(it) } == false) {
+            if (!RecipeCache.isPopulating() && !CraftableRecipes.contains(slotUnderMouse.Recipe)) {
                 slotUnderMouse.State = SlotState.EMPTY
             } else {
                 slotUnderMouse.State = SlotState.ENABLED
@@ -118,15 +113,13 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
         }
     }
     fun handleSearch(query: String) {
-        displayedRecipes.clear()
-        if (query.isNotBlank()) {
-            val craftableRecipesIndexes = searchTree.search(query).fold(setOf<Int>()) { acc, i -> acc + searchTree.getGroupingIndex(i) }
-            @Suppress("UNCHECKED_CAST")
-            displayedRecipes.addAll(craftableRecipesIndexes.map { CraftableRecipes[it] }.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
+        if (query.isNotBlank() && !RecipeCache.isPopulating()) {
+            val craftableRecipesIndexes = RecipeCache.SearchTree.search(query).fold(setOf<Int>()) { acc, i -> acc + RecipeCache.SearchTree.getGroupingIndex(i) }.toSortedSet()
+            displayedRecipes = craftableRecipesIndexes.map { CraftableRecipes[it] }
             currentSearchQuery = query
         } else {
-            @Suppress("UNCHECKED_CAST")
-            displayedRecipes.addAll(CraftableRecipes.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
+            // Shallow clone CraftableRecipes
+            displayedRecipes = CraftableRecipes.clone() as List<IRecipe>
         }
         checkScrollbar()
     }
@@ -159,21 +152,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
     fun onRecipesCalculated(ended: Boolean, recipesChanged: Int) {
         if (ended) {
             if (recipesChanged > 0) {
-                // Build search tree
-                searchTree = SearchTree()
-                CraftableRecipes.forEach { recipe ->
-                    searchTree.putGrouping((recipe.recipeOutput.getTooltip(PlayerInv.player, if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips) ITooltipFlag.TooltipFlags.ADVANCED else ITooltipFlag.TooltipFlags.NORMAL).map {
-                        TextFormatting.getTextWithoutFormattingCodes(it)!!.toLowerCase(Locale.ROOT)
-                    }))
-                }
-                // Group recipes with the same output
-                displayedRecipes.clear()
-                @Suppress("UNCHECKED_CAST")
-                displayedRecipes.addAll(CraftableRecipes.groupBy { it.recipeOutput.item }.values as Collection<RecipeList>)
-
-                // Search any query we have
-                handleSearch(currentSearchQuery)
-
+                recipesJustCalculated = true
                 // Check to see if the scrollbar should be enabled
                 checkScrollbar()
             }

@@ -11,7 +11,6 @@ typealias Amount = Int
 
 typealias Index = Int
 
-typealias RecipeList = ArrayList<IRecipe>
 
 //
 object RecipeCalculator {
@@ -44,7 +43,7 @@ object RecipeCalculator {
                         maxCraftable += it.maxStackSize - it.count
                     }
                 }
-                return doCraftPath(inventory, arrayOfNulls<IRecipe>(maxCraftable).map { recipe } as RecipeList).reduceToCraftablePath()
+                return doCraftPath(inventory, arrayOfNulls<IRecipe>(maxCraftable).map { recipe } as ArrayList<IRecipe>).reduceToCraftablePath()
             }
         }
 
@@ -115,7 +114,7 @@ object RecipeCalculator {
         return CraftingInfo(recipe, usedItemMap.toMap(), ingredientsLeft)
     }
 
-    fun doCraftPath(inventory: CraftInventory, recipeList: RecipeList): CraftingPath {
+    fun doCraftPath(inventory: CraftInventory, recipeList: ArrayList<IRecipe>): CraftingPath {
         val backingInv = inventory.getCombinedInv().map { it.copy() }.toTypedArray()
         val backingCraftInv = object : CraftInventory {
             override fun getNormalInv(): Array<ItemStack> {
