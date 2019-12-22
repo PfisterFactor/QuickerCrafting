@@ -238,7 +238,10 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
         super.mouseClicked(mouseX, mouseY, mouseButton)
         val slot = slotUnderMouse
-        Searchfield.mouseClicked(mouseX, mouseY, mouseButton)
+        if (slotUnderMouse == null || slotUnderMouse !is ClientSlot) {
+            Searchfield.mouseClicked(mouseX, mouseY, mouseButton)
+        }
+
         if (ChangeMenuButton.mousePressed(Minecraft.getMinecraft(), mouseX, mouseY)) {
             ChangeMenuButton.playPressSound(Minecraft.getMinecraft().soundHandler)
             Minecraft.getMinecraft().displayGuiScreen(GuiInventory(Minecraft.getMinecraft().player))
