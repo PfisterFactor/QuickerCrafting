@@ -22,7 +22,6 @@ import java.util.*
 import kotlin.Comparator
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
-import kotlin.system.measureTimeMillis
 
 object RecipeCache {
     // Finds all items used in recipes plus their outputs
@@ -186,24 +185,20 @@ object RecipeCache {
         // Remove only the recipes affected by the changed items
         running_thread = thread(isDaemon = true) {
             var counter = 0
-            println("Changed recipes size: " + changedRecipes.size)
-            println("Removing took " + measureTimeMillis {
-                CraftableRecipes.removeIf { recipe ->
-                    val result = changedRecipes.any { ItemStack.areItemsEqual(recipe.recipeOutput, it.recipeOutput) }
-                    if (result) counter += 1
-                    result
-                }
-            })
 
-            println("Adding took " + measureTimeMillis {
-                changedRecipes.forEach { recipe ->
-                    if (RecipeCalculator.canCraft(inventory, recipe)) {
-                        CraftableRecipes.add(recipe)
-                        counter += 1
-                        callback(false, counter)
-                    }
+            CraftableRecipes.removeIf { recipe ->
+                val result = changedRecipes.any { ItemStack.areItemsEqual(recipe.recipeOutput, it.recipeOutput) }
+                if (result) counter += 1
+                result
+            }
+
+            changedRecipes.forEach { recipe ->
+                if (RecipeCalculator.canCraft(inventory, recipe)) {
+                    CraftableRecipes.add(recipe)
+                    counter += 1
+                    callback(false, counter)
                 }
-            })
+            }
             CraftableRecipes.sortWith(sortingComparator)
             rebuildSearchTree()
             callback(true, counter)

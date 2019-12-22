@@ -237,7 +237,6 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
 
     override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
         super.mouseClicked(mouseX, mouseY, mouseButton)
-        val slot = slotUnderMouse
         if (slotUnderMouse == null || slotUnderMouse !is ClientSlot) {
             Searchfield.mouseClicked(mouseX, mouseY, mouseButton)
         }
