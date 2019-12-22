@@ -65,12 +65,14 @@ object RecipeCache {
     }
     @SideOnly(Side.CLIENT)
     val CraftableRecipes: ArrayList<IRecipe> = ArrayList(ForgeRegistries.RECIPES.entries.size)
-    private val sortingComparator = Comparator<IRecipe> { recipe1, recipe2 ->
-        val items = Item.REGISTRY
-        val r1 = items.indexOfFirst { recipe1.recipeOutput.item == it }
-        val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
-        r1 - r2
-    }
+    private val sortingComparator: Comparator<IRecipe> =
+            Comparator { recipe1, recipe2 ->
+                val items = Item.REGISTRY
+                val r1 = items.indexOfFirst { recipe1.recipeOutput.item == it }
+                val r2 = items.indexOfFirst { recipe2.recipeOutput.item == it }
+                r1 - r2
+            }
+
 
     @SideOnly(Side.CLIENT)
     private var running_thread: Thread = Thread()

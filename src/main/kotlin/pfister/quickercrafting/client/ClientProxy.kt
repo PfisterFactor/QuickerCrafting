@@ -131,7 +131,7 @@ object ClientEventListener {
 
         quickerCraftingButton.x = inv.inventorySlots.inventorySlots[0].xPos
         quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
-        if (QuickerCrafting.IsInvTweaksLoaded) {
+        if (QuickerCrafting.InvTweaksAPI != null) {
             val recipeBookButton = inv.buttonList.find { it.id == 10 }
             if (recipeBookButton != null) {
                 quickerCraftingButton.x = recipeBookButton.x - inv.guiLeft + 22
