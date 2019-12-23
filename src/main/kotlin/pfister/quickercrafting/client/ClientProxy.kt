@@ -2,8 +2,8 @@ package pfister.quickercrafting.client
 
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.ScaledResolution
-import net.minecraft.client.gui.inventory.GuiInventory
 import net.minecraft.client.renderer.GlStateManager
+import net.minecraft.client.renderer.InventoryEffectRenderer
 import net.minecraft.client.settings.KeyBinding
 import net.minecraftforge.client.event.GuiContainerEvent
 import net.minecraftforge.client.event.GuiScreenEvent
@@ -126,11 +126,14 @@ object ClientEventListener {
     @SubscribeEvent
     // Adds our button to go to the quicker crafting menu in the inventory
     fun onRenderTick(event: GuiContainerEvent.DrawForeground) {
-        if (!ConfigValues.ShouldDisplayQuickerCraftingButton || Minecraft.getMinecraft().currentScreen !is GuiInventory) return
-        val inv = (Minecraft.getMinecraft().currentScreen as GuiInventory)
+        if (Minecraft.getMinecraft().currentScreen == null || !ConfigValues.ShouldDisplayQuickerCraftingButton) return
+        val clazz = Minecraft.getMinecraft().currentScreen!!::class.simpleName!!
+        if (clazz != "GuiInventory" && clazz != "GuiPlayerExpanded") return
+        val inv = (Minecraft.getMinecraft().currentScreen as InventoryEffectRenderer)
 
         quickerCraftingButton.x = inv.inventorySlots.inventorySlots[0].xPos
         quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
+
         if (QuickerCrafting.InvTweaksAPI != null) {
             val recipeBookButton = inv.buttonList.find { it.id == 10 }
             if (recipeBookButton != null) {
@@ -152,8 +155,11 @@ object ClientEventListener {
     @JvmStatic
     @SubscribeEvent
     fun onGuiInput(event: GuiScreenEvent.MouseInputEvent.Pre) {
-        if (!ConfigValues.ShouldDisplayQuickerCraftingButton || Minecraft.getMinecraft().currentScreen !is GuiInventory || !Mouse.isButtonDown(0)) return
-        val inv = (Minecraft.getMinecraft().currentScreen as GuiInventory)
+        if (Minecraft.getMinecraft().currentScreen == null || !ConfigValues.ShouldDisplayQuickerCraftingButton || !Mouse.isButtonDown(0)) return
+        val clazz = Minecraft.getMinecraft().currentScreen!!::class.simpleName!!
+        if (clazz != "GuiInventory" && clazz != "GuiPlayerExpanded") return
+
+        val inv = (Minecraft.getMinecraft().currentScreen as InventoryEffectRenderer)
         val scaledresolution = ScaledResolution(Minecraft.getMinecraft())
         val mouseX: Int = Mouse.getX() * scaledresolution.scaledWidth / Minecraft.getMinecraft().displayWidth
         val mouseY: Int = scaledresolution.scaledHeight - Mouse.getY() * scaledresolution.scaledHeight / Minecraft.getMinecraft().displayHeight - 1
