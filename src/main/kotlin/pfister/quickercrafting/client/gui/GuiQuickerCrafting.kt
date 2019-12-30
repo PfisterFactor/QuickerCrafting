@@ -179,6 +179,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     }
 
     override fun initGui() {
+
         super.initGui()
         Scrollbar = GuiScrollBar(guiLeft, guiTop)
         Searchfield = GuiTextField(0, fontRenderer, guiLeft + 144, guiTop + 7, 105, 9)
@@ -188,9 +189,11 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         Searchfield.setTextColor(16777215)
         Searchfield.isFocused = false
 
+
     }
 
     override fun updateScreen() {
+
         super.updateScreen()
         (this.inventorySlots as ClientContainerQuickerCrafting).currentSearchQuery = Searchfield.text
         Searchfield.updateCursorCounter()

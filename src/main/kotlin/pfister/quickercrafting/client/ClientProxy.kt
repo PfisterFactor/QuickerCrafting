@@ -2,9 +2,11 @@ package pfister.quickercrafting.client
 
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.ScaledResolution
+import net.minecraft.client.gui.inventory.GuiContainerCreative
 import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.InventoryEffectRenderer
 import net.minecraft.client.settings.KeyBinding
+import net.minecraft.creativetab.CreativeTabs
 import net.minecraftforge.client.event.GuiContainerEvent
 import net.minecraftforge.client.event.GuiScreenEvent
 import net.minecraftforge.client.event.ModelRegistryEvent
@@ -93,11 +95,15 @@ object ClientEventListener {
     fun onKeybinding(event: InputEvent.KeyInputEvent) {
         if (!InvKeyBinding.isPressed) return
         val player = Minecraft.getMinecraft().player
-        PacketHandler.INSTANCE.sendToServer(MessageOpenGUI())
-        player.openGui(QuickerCrafting, 0, player.world,
-                player.posX.toInt(),
-                player.posY.toInt(),
-                player.posZ.toInt())
+        if (player.isCreative) {
+            Minecraft.getMinecraft().displayGuiScreen(GuiContainerCreative(player))
+        } else {
+            PacketHandler.INSTANCE.sendToServer(MessageOpenGUI())
+            player.openGui(QuickerCrafting, 0, player.world,
+                    player.posX.toInt(),
+                    player.posY.toInt(),
+                    player.posZ.toInt())
+        }
 
     }
 
@@ -131,16 +137,35 @@ object ClientEventListener {
     fun onRenderTick(event: GuiContainerEvent.DrawForeground) {
         if (Minecraft.getMinecraft().currentScreen == null || !ConfigValues.ShouldDisplayQuickerCraftingButton) return
         val clazz = Minecraft.getMinecraft().currentScreen!!::class.simpleName!!
-        if (clazz != "GuiInventory" && clazz != "GuiPlayerExpanded") return
+        if (clazz != "GuiInventory" && clazz != "GuiPlayerExpanded" && clazz != "GuiContainerCreative") return
         val inv = (Minecraft.getMinecraft().currentScreen as InventoryEffectRenderer)
+        quickerCraftingButton.visible = true
+        quickerCraftingButton.enabled = true
 
-        val craftResult = inv.inventorySlots.inventorySlots[0]
-        quickerCraftingButton.x = craftResult.xPos
-        if (QuickerCrafting.InvTweaksAPI != null) {
-            quickerCraftingButton.y = craftResult.yPos + 20
+        if (clazz == "GuiContainerCreative") {
+            val creativeInv = inv as GuiContainerCreative
+            if (creativeInv.selectedTabIndex == CreativeTabs.INVENTORY.index) {
+                val destroyItemSlot = creativeInv.inventorySlots.inventorySlots.find { it.slotIndex == 0 && it !is GuiContainerCreative.CreativeSlot }
+                if (destroyItemSlot != null) {
+                    quickerCraftingButton.x = destroyItemSlot.xPos
+                    quickerCraftingButton.y = destroyItemSlot.yPos - 22
+                }
+            } else {
+                quickerCraftingButton.x = 0
+                quickerCraftingButton.y = 0
+                quickerCraftingButton.enabled = false
+                quickerCraftingButton.visible = false
+            }
         } else {
-            quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
+            val craftResult = inv.inventorySlots.inventorySlots[0]
+            quickerCraftingButton.x = craftResult.xPos
+            if (QuickerCrafting.InvTweaksAPI != null) {
+                quickerCraftingButton.y = craftResult.yPos + 20
+            } else {
+                quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
+            }
         }
+
         GlStateManager.pushMatrix()
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         GlStateManager.disableLighting()
@@ -157,7 +182,7 @@ object ClientEventListener {
     fun onGuiInput(event: GuiScreenEvent.MouseInputEvent.Pre) {
         if (Minecraft.getMinecraft().currentScreen == null || !ConfigValues.ShouldDisplayQuickerCraftingButton || !Mouse.isButtonDown(0)) return
         val clazz = Minecraft.getMinecraft().currentScreen!!::class.simpleName!!
-        if (clazz != "GuiInventory" && clazz != "GuiPlayerExpanded") return
+        if (clazz != "GuiInventory" && clazz != "GuiPlayerExpanded" && clazz != "GuiContainerCreative") return
 
         val inv = (Minecraft.getMinecraft().currentScreen as InventoryEffectRenderer)
         // Dumb workaround because forge doesn't give us a mouse position
