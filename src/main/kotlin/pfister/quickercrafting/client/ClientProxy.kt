@@ -134,18 +134,13 @@ object ClientEventListener {
         if (clazz != "GuiInventory" && clazz != "GuiPlayerExpanded") return
         val inv = (Minecraft.getMinecraft().currentScreen as InventoryEffectRenderer)
 
-        quickerCraftingButton.x = inv.inventorySlots.inventorySlots[0].xPos
-        quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
-
+        val craftResult = inv.inventorySlots.inventorySlots[0]
+        quickerCraftingButton.x = craftResult.xPos
         if (QuickerCrafting.InvTweaksAPI != null) {
-            val recipeBookButton = inv.buttonList.find { it.id == 10 }
-            if (recipeBookButton != null) {
-                quickerCraftingButton.x = recipeBookButton.x - inv.guiLeft + 22
-                quickerCraftingButton.y = recipeBookButton.y - inv.guiTop + 2
-            }
-
+            quickerCraftingButton.y = craftResult.yPos + 20
+        } else {
+            quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
         }
-
         GlStateManager.pushMatrix()
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         GlStateManager.disableLighting()
@@ -156,6 +151,7 @@ object ClientEventListener {
     }
 
 
+    // Why the heck does the event not pass the mouse position?
     @JvmStatic
     @SubscribeEvent
     fun onGuiInput(event: GuiScreenEvent.MouseInputEvent.Pre) {
@@ -164,9 +160,11 @@ object ClientEventListener {
         if (clazz != "GuiInventory" && clazz != "GuiPlayerExpanded") return
 
         val inv = (Minecraft.getMinecraft().currentScreen as InventoryEffectRenderer)
+        // Dumb workaround because forge doesn't give us a mouse position
         val scaledresolution = ScaledResolution(Minecraft.getMinecraft())
         val mouseX: Int = Mouse.getX() * scaledresolution.scaledWidth / Minecraft.getMinecraft().displayWidth
         val mouseY: Int = scaledresolution.scaledHeight - Mouse.getY() * scaledresolution.scaledHeight / Minecraft.getMinecraft().displayHeight - 1
+        //
         if (quickerCraftingButton.mousePressed(Minecraft.getMinecraft(), mouseX - inv.guiLeft, mouseY - inv.guiTop)) {
             val player = Minecraft.getMinecraft().player
             quickerCraftingButton.playPressSound(Minecraft.getMinecraft().soundHandler)
