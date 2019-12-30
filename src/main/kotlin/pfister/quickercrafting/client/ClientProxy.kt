@@ -8,6 +8,7 @@ import net.minecraft.client.settings.KeyBinding
 import net.minecraftforge.client.event.GuiContainerEvent
 import net.minecraftforge.client.event.GuiScreenEvent
 import net.minecraftforge.client.event.ModelRegistryEvent
+import net.minecraftforge.client.settings.KeyConflictContext
 import net.minecraftforge.client.settings.KeyModifier
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
@@ -80,7 +81,7 @@ class ClientProxy : CommonProxy() {
 }
 @Mod.EventBusSubscriber(Side.CLIENT)
 object ClientEventListener {
-    val InvKeyBinding: KeyBinding = KeyBinding("key.$MOD_ID.desc", Keyboard.KEY_E, "key.$MOD_ID.category")
+    val InvKeyBinding: KeyBinding = KeyBinding("key.$MOD_ID.desc", KeyConflictContext.UNIVERSAL, Keyboard.KEY_E, "key.$MOD_ID.category")
     @JvmStatic
     @SubscribeEvent
     fun registerItemModels(event: ModelRegistryEvent) {
@@ -97,6 +98,7 @@ object ClientEventListener {
                 player.posX.toInt(),
                 player.posY.toInt(),
                 player.posZ.toInt())
+
     }
 
 
@@ -106,22 +108,23 @@ object ClientEventListener {
     // Updates the recipe cache when the player is not in an inventory so the user doesnt have to wait to populate it
     // Only happens once per 20 ticks (usually every second)
     fun onPlayerTick(event: TickEvent.PlayerTickEvent) {
-        if (event.side == Side.CLIENT && event.phase == TickEvent.Phase.START) {
-            tickCounter += 1
-            if (tickCounter < ConfigValues.RecipeCheckFrequency) return
-            tickCounter = 0
-            val player = Minecraft.getMinecraft().player
-            // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
-            if ((player.openContainer == null || player.openContainer !is ClientContainerQuickerCrafting) && !RecipeCache.isPopulating()) {
-                RecipeCache.updateCache(false) { ended, _ ->
-                    if (!ended) return@updateCache
-                    ClientContainerQuickerCrafting.displayedRecipes = RecipeCache.CraftableRecipes
-                }
+        if (event.side != Side.CLIENT || event.phase != TickEvent.Phase.START) return
+        tickCounter += 1
+        if (tickCounter < ConfigValues.RecipeCheckFrequency) return
+        tickCounter = 0
+        val player = Minecraft.getMinecraft().player
+        // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
+        if ((player.openContainer == null || player.openContainer !is ClientContainerQuickerCrafting) && !RecipeCache.isPopulating()) {
+            RecipeCache.updateCache(false) { ended, _ ->
+                if (!ended) return@updateCache
+                ClientContainerQuickerCrafting.displayedRecipes = RecipeCache.CraftableRecipes
             }
         }
+
+
     }
 
-    val quickerCraftingButton: GuiButtonImageBiggerTexture = GuiButtonImageBiggerTexture(100, 0, 0, 17, 15, 473, 204, 16, GuiQuickerCrafting.TEXTURE, 512f, 256f)
+    private val quickerCraftingButton: GuiButtonImageBiggerTexture = GuiButtonImageBiggerTexture(100, 0, 0, 17, 15, 473, 204, 16, GuiQuickerCrafting.TEXTURE, 512f, 256f)
     @JvmStatic
     @SubscribeEvent
     // Adds our button to go to the quicker crafting menu in the inventory
@@ -151,6 +154,7 @@ object ClientEventListener {
 
 
     }
+
 
     @JvmStatic
     @SubscribeEvent

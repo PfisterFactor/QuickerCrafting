@@ -10,7 +10,12 @@ class KeybindingHook(private val hookedKeyBinding: KeyBinding, private val callb
     var IsHookEnabled = ConfigValues.HookCraftingKeybind
     override fun isActiveAndMatches(keyCode: Int): Boolean {
         return if (IsHookEnabled) {
-            hookedKeyBinding.isActiveAndMatches(keyCode) || callbackKeyBinding.isActiveAndMatches(keyCode)
+            val stackTrace = Thread.currentThread().stackTrace
+            if (stackTrace.find { it.methodName == "keyTyped" && it.className.endsWith("GuiContainer") } != null) {
+                hookedKeyBinding.isActiveAndMatches(keyCode) || callbackKeyBinding.isActiveAndMatches(keyCode)
+            } else {
+                hookedKeyBinding.isActiveAndMatches(keyCode)
+            }
         } else {
             hookedKeyBinding.isActiveAndMatches(keyCode)
         }
@@ -19,13 +24,13 @@ class KeybindingHook(private val hookedKeyBinding: KeyBinding, private val callb
     override fun isKeyDown(): Boolean {
         hookedKeyBinding.pressTime = this.pressTime
         hookedKeyBinding.pressed = this.pressed
-        return hookedKeyBinding.isKeyDown || callbackKeyBinding.isKeyDown
+        return hookedKeyBinding.isKeyDown
     }
 
     override fun isPressed(): Boolean {
         hookedKeyBinding.pressTime = this.pressTime
         hookedKeyBinding.pressed = this.pressed
-        return hookedKeyBinding.isPressed || callbackKeyBinding.isPressed
+        return hookedKeyBinding.isPressed
     }
 
     override fun setKeyCode(keyCode: Int) {
