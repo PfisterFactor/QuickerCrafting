@@ -10,8 +10,8 @@ class KeybindingHook(private val hookedKeyBinding: KeyBinding, private val callb
     var IsHookEnabled = ConfigValues.HookCraftingKeybind
     override fun isActiveAndMatches(keyCode: Int): Boolean {
         return if (IsHookEnabled) {
-            val stackTrace = Thread.currentThread().stackTrace
-            if (stackTrace.find { it.methodName == "keyTyped" && it.className.endsWith("GuiContainer") } != null) {
+            val callingClass = sun.reflect.Reflection.getCallerClass(2)
+            if (callingClass.simpleName.endsWith("GuiContainer")) {
                 hookedKeyBinding.isActiveAndMatches(keyCode) || callbackKeyBinding.isActiveAndMatches(keyCode)
             } else {
                 hookedKeyBinding.isActiveAndMatches(keyCode)
