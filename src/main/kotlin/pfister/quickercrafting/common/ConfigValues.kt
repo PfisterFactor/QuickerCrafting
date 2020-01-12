@@ -36,4 +36,8 @@ object ConfigValues {
     @Config.Comment("How frequent to update the crafting recipes in the background, in ticks.", "Lower values incur higher performance hits.", "Default is once every 20 ticks (about once a second).")
     @Config.RangeInt(min = 1)
     var RecipeCheckFrequency = 20
+
+    @JvmField
+    @Config.Comment("Should we play the anvil sound on every craft?")
+    var PlayCraftSound = true
 }

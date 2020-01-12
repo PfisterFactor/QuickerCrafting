@@ -2,6 +2,7 @@ package pfister.quickercrafting.client.gui
 
 import com.google.common.collect.Ordering
 import net.minecraft.client.Minecraft
+import net.minecraft.client.audio.PositionedSoundRecord
 import net.minecraft.client.gui.Gui
 import net.minecraft.client.gui.GuiButton
 import net.minecraft.client.gui.GuiTextField
@@ -13,6 +14,7 @@ import net.minecraft.client.renderer.RenderHelper
 import net.minecraft.client.resources.I18n
 import net.minecraft.client.util.RecipeItemHelper
 import net.minecraft.entity.player.InventoryPlayer
+import net.minecraft.init.SoundEvents
 import net.minecraft.inventory.ClickType
 import net.minecraft.inventory.Slot
 import net.minecraft.item.crafting.IRecipe
@@ -29,6 +31,7 @@ import org.lwjgl.input.Keyboard
 import org.lwjgl.input.Mouse
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.client.ClientEventListener
+import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.crafting.CraftHandler
 import pfister.quickercrafting.common.crafting.RecipeCache
 import pfister.quickercrafting.common.crafting.RecipeCalculator
@@ -207,8 +210,11 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         if (slotId < (inventorySlots as ClientContainerQuickerCrafting).ClientSlotsStart)
             super.handleMouseClick(slotIn, slotId, mouseButton, type)
         else if (hoveredCraftingInfo != null && mouseButton == 0 && type != ClickType.THROW && Minecraft.getMinecraft().player.inventory.itemStack.isEmpty && hoveredCraftingInfo?.CraftingInfos?.isNotEmpty() == true) {
-            if (CraftHandler.tryCraftRecipe(this.inventorySlots as ContainerQuickerCrafting, hoveredCraftingInfo?.CraftingInfos?.first()?.Recipe!!, type == ClickType.QUICK_MOVE))
+            if (CraftHandler.tryCraftRecipe(this.inventorySlots as ContainerQuickerCrafting, hoveredCraftingInfo?.CraftingInfos?.first()?.Recipe!!, type == ClickType.QUICK_MOVE)) {
+                if (ConfigValues.PlayCraftSound) Minecraft.getMinecraft().soundHandler.playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.BLOCK_ANVIL_USE, 1.0f))
                 PacketHandler.INSTANCE.sendToServer(MessageCraftItem(hoveredCraftingInfo?.CraftingInfos?.first()?.Recipe!!, type == ClickType.QUICK_MOVE))
+            }
+
         }
     }
 
