@@ -12,14 +12,14 @@ object ConfigValues {
     }
 
     @JvmField
-    @Config.Comment("The distance (in blocks) one needs to be to a crafting table to unlock 3x3 recipes.", "Set to a negative value to always allow 3x3 recipes.", "A zero value will never allow 3x3 recipes.", "Increasing this will have a negative effect on performance.")
+    @Config.Comment("The distance (in blocks) one needs to be to a crafting table to unlock 3x3 recipes.", "Set to a negative value to always allow 3x3 recipes.", "A zero value will never allow 3x3 recipes.", "A crafting table is looked for in this radius every RecipeCheckFrequency ticks and on gui open.", "Increasing this will have a (small) negative effect on performance.")
     @Config.RangeInt(min = -1, max = 10)
     @Config.RequiresWorldRestart
     var CraftingTableRadius: Int = -1
 
     @JvmField
     @Config.RequiresMcRestart
-    @Config.Comment("Enables hooking the QuickerCrafting keybind into the inventory keybind.", "You shouldn't have to disable this (unless you don't like it), and if you need to please give me a bug report.", "Disabling this means that pressing the QuickerCrafting keybind will no longer close the current screen.")
+    @Config.Comment("Enables hooking the QuickerCrafting keybind into the inventory keybind.", "Disabling this means that pressing the QuickerCrafting keybind will no longer close the GuiContainer to match vanilla inventory keybind functionality.", "You shouldn't have to disable this (unless you don't like it), and if you need to please give me a bug report.")
     var HookCraftingKeybind: Boolean = true
 
     @JvmField
@@ -28,7 +28,7 @@ object ConfigValues {
 
     @JvmField
     @Config.Comment("How many crafting steps you can do.", "A value greater than 1 enables multi-stage crafting, meaning you can crafting a pickaxe just from planks by going through intermediate steps to craft sticks.", "Higher values may slowdown crafting.", "Currently not-implemented, so changing this does nothing.")
-    @Config.RangeInt(min = 1)
+    @Config.RangeInt(min = 1, max = 1)
     @Config.RequiresWorldRestart
     var CraftingDepth: Int = 1
 
