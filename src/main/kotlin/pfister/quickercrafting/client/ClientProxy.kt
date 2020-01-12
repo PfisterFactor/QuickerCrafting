@@ -16,7 +16,6 @@ import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
 import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.InputEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
@@ -45,19 +44,15 @@ class ClientProxy : CommonProxy() {
 
     }
 
-    override fun postInit(event: FMLPostInitializationEvent) {
-        super.postInit(event)
+    override fun loadComplete(event: FMLLoadCompleteEvent) {
+        if (ConfigValues.HookCraftingKeybind) {
+            hookInventoryKeybind()
+        }
         // Evaluate the lazy variables, thus calculating the item set and recipe graph
         val ms1 = measureTimeMillis { RecipeCache.ItemsUsedInRecipes }
         LOG.info("Building ingredient set took ${ms1}ms.")
         val ms2 = measureTimeMillis { RecipeCache.RecipeGraph }
         LOG.info("Building recipe graph took ${ms2}ms.")
-    }
-
-    override fun loadComplete(event: FMLLoadCompleteEvent) {
-        if (ConfigValues.HookCraftingKeybind) {
-            hookInventoryKeybind()
-        }
 
     }
 
