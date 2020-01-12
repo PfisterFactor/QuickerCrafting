@@ -15,14 +15,14 @@ import pfister.quickercrafting.common.CommonProxy
 // Some constants related to forge
 const val MOD_ID = "quickercrafting"
 const val MOD_NAME = "Quicker Crafting"
-const val VERSION = "0.1"
+const val VERSION = "0.9"
 //
 
 // Our logger <3
 lateinit var LOG: Logger
 
 
-@Mod(modid = MOD_ID, name = MOD_NAME, version = VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "after:inventorytweaks;after:mousetweaks;")
+@Mod(modid = MOD_ID, name = MOD_NAME, version = VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "after:inventorytweaks;after:mousetweaks;required-after:forgelin@[1.8.3,)")
 object QuickerCrafting {
     @SidedProxy(
             clientSide = "pfister.quickercrafting.client.ClientProxy",
