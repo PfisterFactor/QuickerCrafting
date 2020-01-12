@@ -3,6 +3,7 @@ package pfister.quickercrafting.client.gui
 import com.google.common.collect.Ordering
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Gui
+import net.minecraft.client.gui.GuiButton
 import net.minecraft.client.gui.GuiTextField
 import net.minecraft.client.gui.inventory.GuiContainer
 import net.minecraft.client.gui.inventory.GuiInventory
@@ -184,10 +185,12 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         Scrollbar = GuiScrollBar(guiLeft, guiTop)
         Searchfield = GuiTextField(0, fontRenderer, guiLeft + 144, guiTop + 7, 105, 9)
         ChangeMenuButton = GuiButtonImageBiggerTexture(0, guiLeft + 262, guiTop + 3, 17, 15, 492, 204, 16, GuiQuickerCrafting.TEXTURE, 512f, 256f)
+        buttonList.add(ChangeMenuButton)
         Searchfield.maxStringLength = 21
         Searchfield.enableBackgroundDrawing = false
         Searchfield.setTextColor(16777215)
         Searchfield.isFocused = false
+        (inventorySlots as ClientContainerQuickerCrafting).onGuiOpened()
 
 
     }
@@ -238,15 +241,20 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         }
     }
 
+    override fun actionPerformed(button: GuiButton) {
+        if (button == ChangeMenuButton) {
+            // We change around the inGameHasFocus variable to prevent the gui from resetting the mouse position
+            Minecraft.getMinecraft().inGameHasFocus = true
+            Minecraft.getMinecraft().player.closeScreen()
+            Minecraft.getMinecraft().inGameHasFocus = false
+            Minecraft.getMinecraft().displayGuiScreen(GuiInventory(Minecraft.getMinecraft().player))
+        }
+    }
+
     override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
         super.mouseClicked(mouseX, mouseY, mouseButton)
         if (slotUnderMouse == null || slotUnderMouse !is ClientSlot) {
             Searchfield.mouseClicked(mouseX, mouseY, mouseButton)
-        }
-
-        if (ChangeMenuButton.mousePressed(Minecraft.getMinecraft(), mouseX, mouseY)) {
-            ChangeMenuButton.playPressSound(Minecraft.getMinecraft().soundHandler)
-            Minecraft.getMinecraft().displayGuiScreen(GuiInventory(Minecraft.getMinecraft().player))
         }
     }
 

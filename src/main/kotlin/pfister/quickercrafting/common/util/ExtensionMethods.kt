@@ -2,7 +2,7 @@ package pfister.quickercrafting.common.util
 
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.init.Blocks
-import net.minecraft.inventory.InventoryBasic
+import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.MathHelper
@@ -21,10 +21,23 @@ fun ItemStack.canStack(other: ItemStack): Boolean {
             other.count + this.count <= other.maxStackSize
 }
 
+/**
+ * Checks item, NBT, and meta if the item is not damageable
+ */
+private fun canMergeStacks(stack1: ItemStack, stack2: ItemStack): Boolean {
+    return !stack1.isEmpty &&
+            stack1.item === stack2.item &&
+            (!stack1.hasSubtypes || stack1.metadata == stack2.metadata) &&
+            ItemStack.areItemStackTagsEqual(stack1, stack2) &&
+            stack1.isStackable &&
+            stack1.count < stack1.maxStackSize
+}
+
 // Attempts to add an itemstack to an inventory
 // The returning itemstack is whats left after we cram as much as possible into the inventory
 // Doesn't mutate the argument
-fun InventoryBasic.condensedAdd(itemStackToAdd: ItemStack): ItemStack {
+
+fun IInventory.condensedAdd(itemStackToAdd: ItemStack): ItemStack {
     val copied = itemStackToAdd.copy()
     val size = this.sizeInventory
     var emptySlotIndex = -1
@@ -33,7 +46,7 @@ fun InventoryBasic.condensedAdd(itemStackToAdd: ItemStack): ItemStack {
         val stack = this.getStackInSlot(i)
         if (stack.isEmpty && emptySlotIndex == -1)
             emptySlotIndex = i
-        else if (ItemStack.areItemsEqual(copied, stack) && copied.count + stack.count <= copied.maxStackSize && condensedSlotIndex == -1)
+        else if (canMergeStacks(stack, copied) && copied.count + stack.count <= copied.maxStackSize && condensedSlotIndex == -1)
             condensedSlotIndex = i
     }
 

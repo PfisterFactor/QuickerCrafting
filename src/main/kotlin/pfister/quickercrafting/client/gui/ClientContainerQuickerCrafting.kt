@@ -1,6 +1,7 @@
 package pfister.quickercrafting.client.gui
 
 import invtweaks.api.container.IgnoreContainer
+import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.inventory.InventoryBasic
@@ -54,11 +55,12 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
                 addSlotToContainer(ClientSlot(recipeInventory, y * 9 + x, 98 + x * 18, 20 + y * 18))
             }
         }
-        // Setup things like the search tree, scroll bar,
-        //onRecipesCalculated(true, 1)
+
+    }
+
+    fun onGuiOpened() {
         RecipeCache.check3x3Crafting(this)
         checkScrollbar()
-
     }
 
     // Called after populate recipes is done. So we don't reset the scrollbar after every crafting because craftableRecipes isn't fully populated.
@@ -115,9 +117,16 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
             currentSearchQuery = query
         } else {
             // Shallow clone CraftableRecipes
+            @Suppress("UNCHECKED_CAST")
             displayedRecipes = CraftableRecipes.clone() as List<IRecipe>
         }
         checkScrollbar()
+    }
+
+    override fun onContainerClosed(playerIn: EntityPlayer) {
+        super.onContainerClosed(playerIn)
+        currentSearchQuery = ""
+        displayedRecipes = CraftableRecipes.clone() as List<IRecipe>
     }
 
     // Only sends changes for the slots shared between server and client

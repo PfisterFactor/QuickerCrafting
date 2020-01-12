@@ -8,6 +8,7 @@ import net.minecraft.inventory.InventoryBasic
 import net.minecraft.inventory.Slot
 import net.minecraft.item.ItemStack
 import pfister.quickercrafting.common.crafting.RecipeCalculator
+import pfister.quickercrafting.common.util.condensedAdd
 
 open class NoDragSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : Slot(inv, index, xPos, yPos) {
     override fun isItemValid(stack: ItemStack): Boolean {
@@ -66,12 +67,15 @@ open class ContainerQuickerCrafting(localWorld: Boolean = false, val PlayerInv: 
 
     override fun onContainerClosed(playerIn: EntityPlayer) {
         super.onContainerClosed(playerIn)
-        for (i in 0 until quickCraftResult.sizeInventory) {
-            val stack = quickCraftResult.removeStackFromSlot(i)
-            if (!playerIn.inventory.addItemStackToInventory(stack)) {
-                playerIn.dropItem(stack, false)
+        // Can't use clearcontainer here because packet delays screw things up
+        (0 until quickCraftResult.sizeInventory).map { quickCraftResult.getStackInSlot(it) }.forEach { item ->
+            val leftover = playerIn.inventory.condensedAdd(item)
+            if (leftover != ItemStack.EMPTY) {
+                playerIn.dropItem(item, false)
             }
+
         }
+        quickCraftResult.clear()
     }
 
     override fun transferStackInSlot(playerIn: EntityPlayer, index: Int): ItemStack {
@@ -81,6 +85,7 @@ open class ContainerQuickerCrafting(localWorld: Boolean = false, val PlayerInv: 
         slot.putStack(ItemStack.EMPTY)
         return ItemStack.EMPTY
     }
+
 
     // Get all the slots we craft with
     // Excludes the player inventory's crafting matrix and result, plus the armor slots and offhand slot
