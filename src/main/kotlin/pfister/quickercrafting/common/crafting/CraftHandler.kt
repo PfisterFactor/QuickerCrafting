@@ -53,24 +53,28 @@ object CraftHandler {
         }
         // Get the output from a simulated matrix, if supported, or just the regular old recipeOutput
         val output = getRecipeOutput(container, itemsToRemove, recipe)
+        val slotStacks: Array<ItemStack> = Array(container.quickCraftResult.sizeInventory) { container.quickCraftResult.getStackInSlot(it).copy() }
+        // Detect to see if after crafting there will be an open slot in the craft result slots, if there is we can put the item there
+        itemsToRemove.ItemMap.entries
+                .filter { container.isCraftResultIndex(it.key) }
+                .forEach { (key, value) ->
+                    container.getSlot(key).decrStackSize(value)
+                }
         // Make sure we can fit the craft result and any remaining items in the matrix into the crafting window
         if (!container.canFitStacksInCraftResult(output)) {
-            // Detect to see if after crafting there will be an open slot in the craft result slots, if there is we can put the item there
-            val willCraftResultItemBeConsumed = itemsToRemove.ItemMap.entries.any { (key: Int, value: Int) ->
-                container.isCraftResultIndex(key) && container.getSlot(key).stack.count <= value && output.size == 1
+            // Restore stacks we removed
+            slotStacks.forEachIndexed { index, itemStack -> container.quickCraftResult.setInventorySlotContents(index, itemStack) }
+            if (isServer && !shift) {
+                LOG.warn("MessageCraftItemHandler: Cannot stack '${recipe.registryName.toString()}' into item slot on server.")
             }
-            if (!willCraftResultItemBeConsumed) {
-                if (isServer && !shift) {
-                    LOG.warn("MessageCraftItemHandler: Cannot stack '${recipe.registryName.toString()}' into item slot on server.")
-                }
-                return false
-            }
+            return false
         }
         // Remove all items used during crafting
-        itemsToRemove.ItemMap.entries.forEach { (key: Int, value: Int) ->
-            val slot = container.getSlot(key)
-            slot.decrStackSize(value)
-        }
+        itemsToRemove.ItemMap.entries
+                .filterNot { container.isCraftResultIndex(it.key) }
+                .forEach { (key: Int, value: Int) ->
+                    container.getSlot(key).decrStackSize(value)
+                }
 
         // Try to put the recipe output in the inventory and get the itemstacks that couldn't fit
         val leftOvers: List<ItemStack> = output.fold(listOf()) { acc, i ->
