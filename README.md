@@ -5,6 +5,8 @@ All the recipes you can make from your inventory are displayed directly, rather 
 
 Note: This only changes player crafting, it does not change any autocrafting machines (e.g. buildcraft, AE2, etc..)
 
+[Curseforge](https://www.curseforge.com/minecraft/mc-mods/quickercrafting)
+
 ## Features
 - Displays all (non-advanced) recipes the player can craft with their inventory in a 3x3 matrix (either at all times or based on distance to a nearby crafting table)
 - A GUI built on a "no-surprises" principle.
