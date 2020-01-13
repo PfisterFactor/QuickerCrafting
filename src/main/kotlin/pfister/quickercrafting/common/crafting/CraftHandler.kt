@@ -82,7 +82,7 @@ object CraftHandler {
         }
 
         leftOvers.forEach {
-            if (it.isEmpty) {
+            if (!it.isEmpty) {
                 container.PlayerInv.player.dropItem(it, false)
             }
         }
