@@ -9,7 +9,6 @@ import net.minecraft.client.settings.KeyBinding
 import net.minecraft.creativetab.CreativeTabs
 import net.minecraftforge.client.event.GuiContainerEvent
 import net.minecraftforge.client.event.GuiScreenEvent
-import net.minecraftforge.client.event.ModelRegistryEvent
 import net.minecraftforge.client.settings.KeyConflictContext
 import net.minecraftforge.client.settings.KeyModifier
 import net.minecraftforge.fml.client.registry.ClientRegistry
@@ -31,7 +30,6 @@ import pfister.quickercrafting.client.gui.GuiQuickerCrafting
 import pfister.quickercrafting.common.CommonProxy
 import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.crafting.RecipeCache
-import pfister.quickercrafting.common.item.ModItems
 import pfister.quickercrafting.common.network.MessageOpenGUI
 import pfister.quickercrafting.common.network.PacketHandler
 import kotlin.system.measureTimeMillis
@@ -79,11 +77,6 @@ class ClientProxy : CommonProxy() {
 @Mod.EventBusSubscriber(Side.CLIENT)
 object ClientEventListener {
     val InvKeyBinding: KeyBinding = KeyBinding("key.$MOD_ID.desc", KeyConflictContext.UNIVERSAL, Keyboard.KEY_E, "key.$MOD_ID.category")
-    @JvmStatic
-    @SubscribeEvent
-    fun registerItemModels(event: ModelRegistryEvent) {
-        ModItems.initModels()
-    }
 
     @JvmStatic
     @SubscribeEvent

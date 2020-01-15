@@ -1,10 +1,8 @@
 package pfister.quickercrafting.common
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.EntityPlayerMP
-import net.minecraft.item.Item
 import net.minecraftforge.common.config.Config
 import net.minecraftforge.common.config.ConfigManager
-import net.minecraftforge.event.RegistryEvent
 import net.minecraftforge.event.entity.EntityJoinWorldEvent
 import net.minecraftforge.fml.client.event.ConfigChangedEvent
 import net.minecraftforge.fml.common.Mod
@@ -18,7 +16,6 @@ import pfister.quickercrafting.LOG
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.QuickerCrafting
 import pfister.quickercrafting.common.gui.GuiHandler
-import pfister.quickercrafting.common.item.ItemGuiTester
 import pfister.quickercrafting.common.network.PacketHandler
 
 // Handles initialization functionality common to client and server
@@ -52,12 +49,6 @@ open class CommonProxy {
 @Suppress("unused")
 @Mod.EventBusSubscriber
 object CommonEventListener {
-    @JvmStatic
-    @SubscribeEvent
-    fun registerItems(event: RegistryEvent.Register<Item>) {
-        // Register our one item with forge
-        event.registry.register(ItemGuiTester())
-    }
 
     @JvmStatic
     @SubscribeEvent
