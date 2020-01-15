@@ -154,7 +154,7 @@ object ClientEventListener {
         } else {
             val craftResult = inv.inventorySlots.inventorySlots[0]
             quickerCraftingButton.x = craftResult.xPos
-            if (QuickerCrafting.InvTweaksAPI != null) {
+            if (QuickerCrafting.InvTweaksLoaded) {
                 quickerCraftingButton.y = craftResult.yPos + 20
             } else {
                 quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24

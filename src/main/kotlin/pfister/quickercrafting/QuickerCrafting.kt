@@ -1,8 +1,8 @@
 package pfister.quickercrafting
 
-import invtweaks.api.InvTweaksAPI
 import net.minecraftforge.common.config.Config
 import net.minecraftforge.common.config.ConfigManager
+import net.minecraftforge.fml.common.Loader
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.SidedProxy
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
@@ -15,7 +15,7 @@ import pfister.quickercrafting.common.CommonProxy
 // Some constants related to forge
 const val MOD_ID = "quickercrafting"
 const val MOD_NAME = "Quicker Crafting"
-const val VERSION = "0.9"
+const val VERSION = "0.9.1"
 //
 
 // Our logger <3
@@ -31,13 +31,13 @@ object QuickerCrafting {
     // Reference to our proxy
     private lateinit var proxy: CommonProxy
 
-    @Mod.Instance(value = "inventorytweaks")
-    var InvTweaksAPI: InvTweaksAPI? = null
-        private set
+    var InvTweaksLoaded: Boolean = false
 
     @Mod.EventHandler
     fun preInit(event: FMLPreInitializationEvent) {
         LOG = event.modLog
+        InvTweaksLoaded = Loader.isModLoaded("inventorytweaks")
+
         proxy.preInit(event)
     }
 
