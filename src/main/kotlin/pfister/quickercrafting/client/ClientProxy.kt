@@ -108,10 +108,15 @@ object ClientEventListener {
         tickCounter = 0
         val player = Minecraft.getMinecraft().player
         // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
-        if ((player.openContainer == null || player.openContainer !is ClientContainerQuickerCrafting) && !RecipeCache.isPopulating()) {
-            RecipeCache.updateCache(false) { ended, _ ->
-                if (!ended) return@updateCache
-                ClientContainerQuickerCrafting.displayedRecipes = RecipeCache.CraftableRecipes
+        if (Minecraft.getMinecraft().currentScreen !is GuiQuickerCrafting) {
+            if (RecipeCache.isPopulating()) {
+                // Try again next tick
+                tickCounter = ConfigValues.RecipeCheckFrequency
+            } else {
+                RecipeCache.updateCache(false) { ended, _ ->
+                    if (!ended) return@updateCache
+                    ClientContainerQuickerCrafting.displayedRecipes = RecipeCache.CraftableRecipes
+                }
             }
         }
 
