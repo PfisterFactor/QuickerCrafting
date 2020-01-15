@@ -12,7 +12,7 @@ object ConfigValues {
     }
 
     @JvmField
-    @Config.Comment("The distance (in blocks) one needs to be to a crafting table to unlock 3x3 recipes.", "Set to a negative value to always allow 3x3 recipes.", "A zero value will never allow 3x3 recipes.", "A crafting table is looked for in this radius every RecipeCheckFrequency ticks and on gui open.", "Increasing this will have a (small) negative effect on performance.")
+    @Config.Comment("The distance (in blocks) one needs to be to a crafting table to unlock 3x3 recipes.", "Set to a negative value to always allow 3x3 recipes.", "A zero value will never allow 3x3 recipes.", "A crafting table is looked for in this radius on gui open.", "Increasing this will have a (small) negative effect on performance.")
     @Config.RangeInt(min = -1, max = 10)
     @Config.RequiresWorldRestart
     var CraftingTableRadius: Int = -1
