@@ -40,4 +40,12 @@ object ConfigValues {
     @JvmField
     @Config.Comment("Should we play the anvil sound on every craft?")
     var PlayCraftSound = true
+
+    @JvmField
+    @Config.Comment("Blocks that work as a valid crafting table, meaning they'll enable 3x3 recipes.", "Only used if distance to crafting table mechanics are on.")
+    var ValidCraftingTableBlocks: Array<String> = arrayOf("minecraft:crafting_table")
+
+    @JvmField
+    @Config.Comment("Items that work as a valid crafting table, meaning they'll enable 3x3 recipes if they're in inventory.", "Only used if distance to crafting table mechanics are on.")
+    var ValidCraftingTableItems: Array<String> = arrayOf("")
 }

@@ -1,7 +1,6 @@
 package pfister.quickercrafting.common.util
 
 import net.minecraft.entity.player.EntityPlayer
-import net.minecraft.init.Blocks
 import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import net.minecraft.util.math.BlockPos
@@ -63,12 +62,25 @@ fun IInventory.condensedAdd(itemStackToAdd: ItemStack): ItemStack {
 }
 
 private var cachedTablePos: BlockPos? = null
+private var cachedTableItemIndex: Int = -1
 fun EntityPlayer.craftingTableInRange(): Boolean {
     // Todo: Make this more efficient
     if (ConfigValues.CraftingTableRadius == 0) return false
     if (ConfigValues.CraftingTableRadius < 0) return true
+    if (ConfigValues.ValidCraftingTableItems.isNotEmpty()) {
+        val allInventory = this.inventory.mainInventory + this.inventory.armorInventory + this.inventory.offHandInventory
+        if (cachedTableItemIndex != -1 && ConfigValues.ValidCraftingTableItems.contains(allInventory[cachedTableItemIndex].item.registryName.toString())) {
+            return true
+        }
+        cachedTableItemIndex = allInventory.indexOfFirst { itemStack ->
+            ConfigValues.ValidCraftingTableItems.contains(itemStack.item.registryName.toString())
+        }
+        if (cachedTableItemIndex != -1) {
+            return true
+        }
+    }
     if (cachedTablePos != null && this.getDistance(cachedTablePos!!.x.toDouble(), cachedTablePos!!.y.toDouble(), cachedTablePos!!.z.toDouble()) <= ConfigValues.CraftingTableRadius) {
-        if (this.world.getBlockState(cachedTablePos!!).block == Blocks.CRAFTING_TABLE) {
+        if (this.world.isBlockLoaded(cachedTablePos!!) && ConfigValues.ValidCraftingTableBlocks.contains(this.world.getBlockState(cachedTablePos!!).block.registryName.toString())) {
             return true
         } else {
             cachedTablePos = null
@@ -83,7 +95,7 @@ fun EntityPlayer.craftingTableInRange(): Boolean {
         for (x: Int in -ConfigValues.CraftingTableRadius..ConfigValues.CraftingTableRadius) {
             for (z: Int in -ConfigValues.CraftingTableRadius..ConfigValues.CraftingTableRadius) {
                 mutBlockPos.setPos(blockX + x, blockY + y, blockZ + z)
-                if (this.world.isBlockLoaded(mutBlockPos) && this.world.getBlockState(mutBlockPos).block == Blocks.CRAFTING_TABLE && mutBlockPos.getDistance(blockX, blockY, blockZ) <= ConfigValues.CraftingTableRadius) {
+                if (this.world.isBlockLoaded(mutBlockPos) && ConfigValues.ValidCraftingTableBlocks.contains(this.world.getBlockState(mutBlockPos).block.registryName.toString()) && mutBlockPos.getDistance(blockX, blockY, blockZ) <= ConfigValues.CraftingTableRadius) {
                     cachedTablePos = mutBlockPos
                     return true
                 }
