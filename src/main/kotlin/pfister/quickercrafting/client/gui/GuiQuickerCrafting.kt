@@ -56,6 +56,13 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
 
             val gui = Minecraft.getMinecraft().currentScreen as GuiQuickerCrafting
             if (gui.hoveredCraftingInfo?.canCraft() == false) {
+                if (gui.hoveredCraftingInfo != null && (gui.slotUnderMouse as? ClientSlot)?.State == SlotState.ENABLED) {
+                    // Rebuild cache because something is wrong if the slot is enabled but we can't craft it
+                    if (!RecipeCache.isPopulating()) {
+                        RecipeCache.updateCache(true) { ended, rchanged -> (gui.inventorySlots as ClientContainerQuickerCrafting).onRecipesCalculated(ended, rchanged) }
+                    }
+
+                }
                 event.isCanceled = true
                 return
             }

@@ -138,6 +138,7 @@ object RecipeCache {
             (player.inventory.mainInventory.drop(9) + player.inventory.mainInventory.take(9)).toTypedArray()
         }
         if (forceRefresh) {
+            CraftableRecipes.clear()
             oldInventory = Array(39) { ItemStack.EMPTY }
         }
         val changedStacks: MutableList<ItemStack> = mutableListOf()
