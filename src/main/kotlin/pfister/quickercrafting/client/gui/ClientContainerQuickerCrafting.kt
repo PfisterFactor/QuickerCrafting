@@ -1,6 +1,5 @@
 package pfister.quickercrafting.client.gui
 
-import invtweaks.api.container.IgnoreContainer
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.inventory.IInventory

@@ -32,12 +32,13 @@ object QuickerCrafting {
     private lateinit var proxy: CommonProxy
 
     var InvTweaksLoaded: Boolean = false
+    var BaublesLoaded: Boolean = false
 
     @Mod.EventHandler
     fun preInit(event: FMLPreInitializationEvent) {
         LOG = event.modLog
         InvTweaksLoaded = Loader.isModLoaded("inventorytweaks")
-
+        BaublesLoaded = Loader.isModLoaded("baubles")
         proxy.preInit(event)
     }
 
