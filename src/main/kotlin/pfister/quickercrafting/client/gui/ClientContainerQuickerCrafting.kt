@@ -33,7 +33,6 @@ class ClientSlot(inv: IInventory, index: Int, xPos: Int, yPos: Int) : NoDragSlot
 }
 
 @SideOnly(Side.CLIENT)
-@IgnoreContainer
 class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuickerCrafting(true, playerInv) {
     companion object {
         const val ROW_LENGTH = 9

@@ -208,6 +208,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     override fun updateScreen() {
 
         super.updateScreen()
+        val invTweaksButton = buttonList.find { it.displayString == "..." }
+        invTweaksButton?.y = guiTop - 11
         (this.inventorySlots as ClientContainerQuickerCrafting).currentSearchQuery = Searchfield.text
         Searchfield.updateCursorCounter()
         inventorySlots.detectAndSendChanges()
