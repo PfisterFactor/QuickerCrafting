@@ -5,12 +5,10 @@ import net.minecraftforge.common.config.ConfigManager
 import net.minecraftforge.fml.common.Loader
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.SidedProxy
-import net.minecraftforge.fml.common.event.FMLInitializationEvent
-import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
+import net.minecraftforge.fml.common.event.*
 import org.apache.logging.log4j.Logger
 import pfister.quickercrafting.common.CommonProxy
+import pfister.quickercrafting.common.command.CommandRefreshRecipeCache
 
 // Some constants related to forge
 const val MOD_ID = "quickercrafting"
@@ -56,6 +54,11 @@ object QuickerCrafting {
     @Mod.EventHandler
     fun loadComplete(event: FMLLoadCompleteEvent) {
         proxy.loadComplete(event)
+    }
+
+    @Mod.EventHandler
+    fun serverStart(event: FMLServerStartingEvent) {
+        event.registerServerCommand(CommandRefreshRecipeCache())
     }
 
 }

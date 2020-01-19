@@ -31,6 +31,7 @@ open class CommonProxy {
         // Register our gui handlers with forge
         NetworkRegistry.INSTANCE.registerGuiHandler(QuickerCrafting, GuiHandler)
 
+
     }
 
     @Mod.EventHandler
