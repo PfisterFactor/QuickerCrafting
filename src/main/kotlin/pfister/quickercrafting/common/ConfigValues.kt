@@ -8,7 +8,7 @@ import pfister.quickercrafting.common.network.MessageSyncConfig
 @Config(modid = MOD_ID, name = "QuickerCrafting")
 object ConfigValues {
     fun generateSyncPacket(): MessageSyncConfig {
-        return MessageSyncConfig(CraftingTableRadius, CraftingDepth)
+        return MessageSyncConfig(CraftingTableRadius, CraftingDepth, ValidCraftingTableBlocks, ValidCraftingTableItems)
     }
 
     @JvmField
@@ -43,9 +43,11 @@ object ConfigValues {
 
     @JvmField
     @Config.Comment("Blocks that work as a valid crafting table, meaning they'll enable 3x3 recipes.", "Only used if distance to crafting table mechanics are on.")
+    @Config.RequiresWorldRestart
     var ValidCraftingTableBlocks: Array<String> = arrayOf("minecraft:crafting_table")
 
     @JvmField
     @Config.Comment("Items that work as a valid crafting table, meaning they'll enable 3x3 recipes if they're in inventory.", "Only used if distance to crafting table mechanics are on.")
+    @Config.RequiresWorldRestart
     var ValidCraftingTableItems: Array<String> = arrayOf("")
 }
