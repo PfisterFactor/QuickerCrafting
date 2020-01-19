@@ -152,10 +152,11 @@ object ClientEventListener {
         } else {
             val craftResult = inv.inventorySlots.inventorySlots[0]
             quickerCraftingButton.x = craftResult.xPos
+            quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
             if (QuickerCrafting.InvTweaksLoaded) {
-                quickerCraftingButton.y = craftResult.yPos + 20
-            } else {
-                quickerCraftingButton.y = inv.inventorySlots.inventorySlots[0].yPos - 24
+                // Moves the invtweaks button up a bit so our buttons don't overlap
+                val invTweaksButton = inv.buttonList.find { it.displayString == "..." }
+                invTweaksButton?.y = inv.guiTop - 11
             }
         }
 
