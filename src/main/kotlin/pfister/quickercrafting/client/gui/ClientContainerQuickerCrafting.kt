@@ -49,7 +49,7 @@ class ClientContainerQuickerCrafting(playerInv: InventoryPlayer) : ContainerQuic
 
     init {
         for (y in 0 until 3) {
-            for (x in 0 until 9) {
+            for (x in 0 until ROW_LENGTH) {
                 addSlotToContainer(ClientSlot(recipeInventory, y * 9 + x, 98 + x * 18, 20 + y * 18))
             }
         }

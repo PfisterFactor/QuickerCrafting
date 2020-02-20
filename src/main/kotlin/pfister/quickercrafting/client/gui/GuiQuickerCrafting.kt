@@ -13,7 +13,6 @@ import net.minecraft.client.renderer.InventoryEffectRenderer
 import net.minecraft.client.renderer.RenderHelper
 import net.minecraft.client.resources.I18n
 import net.minecraft.client.util.RecipeItemHelper
-import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.entity.player.InventoryPlayer
 import net.minecraft.init.SoundEvents
 import net.minecraft.inventory.ClickType
@@ -211,6 +210,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
                 val baublesButtonConstructor = baublesButtonClass.getConstructor(Int::class.java, GuiContainer::class.java, Int::class.java, Int::class.java, Int::class.java, Int::class.java, String::class.java)
 
                 // If you change the imitation baubles button coordinates you need to change both of these
+
                 val baublesButton = baublesButtonConstructor.newInstance(1, this, 64, 9, 10, 10, I18n.format("button.baubles")) as GuiButton
                 val imitationBaublesButton = object : GuiButton(1, guiLeft + 64, guiTop + 9, 10, 10, I18n.format("button.baubles")) {
                     override fun drawButton(mc: Minecraft, mouseX: Int, mouseY: Int, partialTicks: Float) {
@@ -291,14 +291,15 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         }
         // Our imitation baubles button
         else if (button.id == 1 && QuickerCrafting.BaublesLoaded) {
-            Minecraft.getMinecraft().inGameHasFocus = true
-            Minecraft.getMinecraft().player.closeScreen()
-            Minecraft.getMinecraft().inGameHasFocus = false
+//            Minecraft.getMinecraft().inGameHasFocus = true
+//            Minecraft.getMinecraft().player.closeScreen()
+//            Minecraft.getMinecraft().inGameHasFocus = false
             try {
-                val baublesGuiPlayerExpandedClass = Class.forName("baubles.client.gui.GuiPlayerExpanded")
-                val baublesGuiPlayerExpandedConstructor = baublesGuiPlayerExpandedClass.getConstructor(EntityPlayer::class.java)
-                val baublesGuiPlayerExpanded = baublesGuiPlayerExpandedConstructor.newInstance(Minecraft.getMinecraft().player) as InventoryEffectRenderer
-                Minecraft.getMinecraft().displayGuiScreen(baublesGuiPlayerExpanded)
+                val baublesButtonClass = Class.forName("baubles.client.gui.GuiBaublesButton")
+                val baublesButtonConstructor = baublesButtonClass.getConstructor(Int::class.java, GuiContainer::class.java, Int::class.java, Int::class.java, Int::class.java, Int::class.java, String::class.java)
+                val guiInventory = GuiInventory(Minecraft.getMinecraft().player)
+                val baublesButton = baublesButtonConstructor.newInstance(1, guiInventory, 64, 9, 10, 10, I18n.format("button.baubles")) as GuiButton
+                baublesButton.mousePressed(Minecraft.getMinecraft(), 64 + guiInventory.guiLeft, 10)
             } catch (e: Exception) {
                 LOG.warn("GuiQuickerCrafting: Baubles button clicked but could not class load GuiPlayerExpanded")
                 // Just display the inventory
@@ -371,6 +372,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         }
         super.drawScreen(mouseX, mouseY, partialTicks)
         GlStateManager.disableLighting()
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         ChangeMenuButton.drawButton(Minecraft.getMinecraft(), mouseX, mouseY, partialTicks)
         GlStateManager.enableLighting()
         hoveredCraftingInfo = if (slotUnderMouse != null && slotUnderMouse is ClientSlot) {
