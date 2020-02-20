@@ -291,18 +291,19 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         }
         // Our imitation baubles button
         else if (button.id == 1 && QuickerCrafting.BaublesLoaded) {
-//            Minecraft.getMinecraft().inGameHasFocus = true
-//            Minecraft.getMinecraft().player.closeScreen()
-//            Minecraft.getMinecraft().inGameHasFocus = false
             try {
+                // Creates a baubles button and runs the mousePressed function.
+                // This will send a packet to the server to open the baubles GUI
                 val baublesButtonClass = Class.forName("baubles.client.gui.GuiBaublesButton")
                 val baublesButtonConstructor = baublesButtonClass.getConstructor(Int::class.java, GuiContainer::class.java, Int::class.java, Int::class.java, Int::class.java, Int::class.java, String::class.java)
                 val guiInventory = GuiInventory(Minecraft.getMinecraft().player)
                 val baublesButton = baublesButtonConstructor.newInstance(1, guiInventory, 64, 9, 10, 10, I18n.format("button.baubles")) as GuiButton
                 baublesButton.mousePressed(Minecraft.getMinecraft(), 64 + guiInventory.guiLeft, 10)
+                //
             } catch (e: Exception) {
-                LOG.warn("GuiQuickerCrafting: Baubles button clicked but could not class load GuiPlayerExpanded")
+                LOG.warn("GuiQuickerCrafting: Baubles button clicked but could not class load GuiBaublesButton")
                 // Just display the inventory
+                Minecraft.getMinecraft().player.closeScreen()
                 Minecraft.getMinecraft().displayGuiScreen(GuiInventory(Minecraft.getMinecraft().player))
             }
 
