@@ -18,15 +18,16 @@ class ASMTransformer : IClassTransformer {
     }
 
     fun doGuiContainerTransform(bytes: ByteArray?): ByteArray? {
+        println("QuickerCrafting: Beginning GuiContainer.onKeyTyped Transform...")
         val classReader = ClassReader(bytes)
         val classNode = ClassNode(Opcodes.ASM4)
         val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES.or(ClassWriter.COMPUTE_MAXS))
 
         classReader.accept(classNode, 0)
 
-        val keyTypedMethod = classNode.methods.find { it.name == "keyTyped" || it.name == "func_73869_a" }
+        val keyTypedMethod = classNode.methods.find { it.name == "keyTyped" || (it.name == "a" && it.desc == "(CI)V") }
                 ?: return bytes
-
+        println("Found keyTypedMethod")
         val code = keyTypedMethod.instructions
         var ifcmpeqInsn: AbstractInsnNode? = null
         val iterator = code.iterator()
@@ -38,6 +39,7 @@ class ASMTransformer : IClassTransformer {
             }
         }
         if (ifcmpeqInsn == null) return bytes
+        println("Found ifcmpeq Insn")
         var labelNode: LabelNode? = (ifcmpeqInsn as JumpInsnNode).label
 
         // Load keybinding onto stack
