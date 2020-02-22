@@ -10,13 +10,11 @@ import net.minecraft.creativetab.CreativeTabs
 import net.minecraftforge.client.event.GuiContainerEvent
 import net.minecraftforge.client.event.GuiScreenEvent
 import net.minecraftforge.client.settings.KeyConflictContext
-import net.minecraftforge.client.settings.KeyModifier
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
 import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
-import net.minecraftforge.fml.common.gameevent.InputEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.relauncher.Side
 import org.lwjgl.input.Keyboard
@@ -43,9 +41,6 @@ class ClientProxy : CommonProxy() {
     }
 
     override fun loadComplete(event: FMLLoadCompleteEvent) {
-        if (ConfigValues.HookCraftingKeybind) {
-            hookInventoryKeybind()
-        }
         // Evaluate the lazy variables, thus calculating the item set and recipe graph
         val ms1 = measureTimeMillis { RecipeCache.ItemsUsedInRecipes }
         LOG.info("Building ingredient set took ${ms1}ms.")
@@ -54,34 +49,19 @@ class ClientProxy : CommonProxy() {
 
     }
 
-    // Creates a keybinding hook and replaces the inventory keybinding with it
-    // Makes it so pressing the key for QuickerCrafing will close other guis like how pressing E closes guis
-    private fun hookInventoryKeybind() {
-        val settings = Minecraft.getMinecraft().gameSettings
-        val invKeyIndex = settings.keyBindings.indexOf(settings.keyBindInventory)
-        if (invKeyIndex != -1) {
-            val hook = KeybindingHook(settings.keyBindings[invKeyIndex], ClientEventListener.InvKeyBinding)
-            settings.keyBindings[invKeyIndex] = hook
-            settings.keyBindInventory = hook
-        } else {
-            LOG.warn("ClientProxy: There was an issue finding the inventory keybinding (${settings.keyBindInventory}) within the keybinding array, could not install hook!")
-        }
-        if (ClientEventListener.InvKeyBinding.isSetToDefaultValue && settings.keyBindInventory.isSetToDefaultValue) {
-            settings.keyBindInventory.setKeyModifierAndCode(KeyModifier.NONE, Keyboard.KEY_NONE)
-        }
-
-    }
-
-
 }
 @Mod.EventBusSubscriber(Side.CLIENT)
 object ClientEventListener {
+    // Referenced by the core mod, do not change
+    @JvmStatic
     val InvKeyBinding: KeyBinding = KeyBinding("key.$MOD_ID.desc", KeyConflictContext.UNIVERSAL, Keyboard.KEY_E, "key.$MOD_ID.category")
 
     @JvmStatic
     @SubscribeEvent
-    fun onKeybinding(event: InputEvent.KeyInputEvent) {
+    fun onClientTick(event: TickEvent.ClientTickEvent) {
+        if (event.phase != TickEvent.Phase.END) return
         if (!InvKeyBinding.isPressed) return
+
         val player = Minecraft.getMinecraft().player
         if (player.isCreative) {
             Minecraft.getMinecraft().displayGuiScreen(GuiContainerCreative(player))
@@ -92,7 +72,6 @@ object ClientEventListener {
                     player.posY.toInt(),
                     player.posZ.toInt())
         }
-
     }
 
 

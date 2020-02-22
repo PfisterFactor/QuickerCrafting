@@ -42,6 +42,8 @@ minecraft {
     mappings = 'snapshot_20180814'
     makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
     useDepAts = true
+    coreMod = "pfister.quickercrafting.asm.FMLPlugin"
+
 }
 repositories {
     jcenter()
@@ -102,7 +104,8 @@ processResources {
 jar {
 
     manifest {
-        attributes 'FMLAT': 'quickercrafting_at.cfg'
+        attributes 'FMLAT': 'quickercrafting_at.cfg', 'FMLCorePlugin': 'pfister.quickercrafting.asm.FMLPlugin', 'FMLCorePluginContainsFMLMod': true
+
     }
     from configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }
 }
