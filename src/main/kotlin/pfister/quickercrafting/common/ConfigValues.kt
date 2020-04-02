@@ -18,11 +18,6 @@ object ConfigValues {
     var CraftingTableRadius: Int = -1
 
     @JvmField
-    @Config.RequiresMcRestart
-    @Config.Comment("Enables hooking the QuickerCrafting keybind into the inventory keybind.", "Disabling this means that pressing the QuickerCrafting keybind will no longer close the GuiContainer to match vanilla inventory keybind functionality.", "You shouldn't have to disable this (unless you don't like it), and if you need to please give me a bug report.")
-    var HookCraftingKeybind: Boolean = true
-
-    @JvmField
     @Config.Comment("Enables the button in the inventory to switch to the QuickerCrafting menu.")
     var ShouldDisplayQuickerCraftingButton: Boolean = true
 
@@ -33,7 +28,7 @@ object ConfigValues {
     var CraftingDepth: Int = 1
 
     @JvmField
-    @Config.Comment("How frequent to update the crafting recipes in the background, in ticks.", "Lower values incur higher performance hits.", "Default is once every 20 ticks (about once a second).")
+    @Config.Comment("How frequent to update the crafting recipes in the background, in ticks.", "Lower values incur higher performance hits.", "Default is once every 20 ticks (about once a second).", "Note: This does NOT change how fast recipes generate in the GUI.")
     @Config.RangeInt(min = 1)
     var RecipeCheckFrequency = 20
 

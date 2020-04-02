@@ -33,9 +33,10 @@ import pfister.quickercrafting.LOG
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.QuickerCrafting
 import pfister.quickercrafting.client.ClientEventListener
+import pfister.quickercrafting.client.RecipeWorker
 import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.crafting.CraftHandler
-import pfister.quickercrafting.common.crafting.RecipeCache
+import pfister.quickercrafting.common.crafting.InventoryChangeManager
 import pfister.quickercrafting.common.crafting.RecipeCalculator
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
 import pfister.quickercrafting.common.network.MessageCraftItem
@@ -60,9 +61,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
             if (gui.hoveredCraftingInfo?.canCraft() == false) {
                 if (gui.hoveredCraftingInfo != null && (gui.slotUnderMouse as? ClientSlot)?.State == SlotState.ENABLED) {
                     // Rebuild cache because something is wrong if the slot is enabled but we can't craft it
-                    if (!RecipeCache.isPopulating()) {
-                        RecipeCache.updateCache(true) { ended, rchanged -> (gui.inventorySlots as ClientContainerQuickerCrafting).onRecipesCalculated(ended, rchanged) }
-                    }
+                    InventoryChangeManager.computeChanges(true)
 
                 }
                 event.isCanceled = true
@@ -234,7 +233,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
         val invTweaksButton = buttonList.find { it.displayString == "..." }
         invTweaksButton?.y = guiTop - 11
 
-        (this.inventorySlots as ClientContainerQuickerCrafting).currentSearchQuery = Searchfield.text
+        //(this.inventorySlots as ClientContainerQuickerCrafting).currentSearchQuery = Searchfield.text
         Searchfield.updateCursorCounter()
         inventorySlots.detectAndSendChanges()
     }
@@ -270,8 +269,8 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     override fun handleMouseInput() {
         super.handleMouseInput()
         var i = Mouse.getDWheel()
-        if (i != 0 && Scrollbar.isEnabled && !RecipeCache.isPopulating()) {
-            val rows = (RecipeCache.CraftableRecipes.size + 8) / 9
+        if (i != 0 && Scrollbar.isEnabled) {
+            val rows = (RecipeWorker.CraftableRecipes.size + 8) / 9
             if (i > 0) i = 1
             else if (i < 0) i = -1
             Scrollbar.isScrolling = true
@@ -407,7 +406,7 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F)
         this.mc.textureManager.bindTexture(TEXTURE)
-        if (Scrollbar.isEnabled || RecipeCache.isPopulating()) {
+        if (Scrollbar.isEnabled) {
             Gui.drawModalRectWithCustomSizedTexture(
                     GuiScrollBar.GUI_POS_X,
                     MathHelper.clamp(GuiScrollBar.GUI_POS_Y - GuiScrollBar.TEX_HEIGHT / 2 + (GuiScrollBar.SCROLLBAR_HEIGHT * Scrollbar.currentScroll).toInt(), GuiScrollBar.GUI_POS_Y, GuiScrollBar.GUI_POS_Y + GuiScrollBar.SCROLLBAR_HEIGHT - GuiScrollBar.TEX_HEIGHT - 1
@@ -427,9 +426,6 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
                     GuiScrollBar.TEX_WIDTH,
                     GuiScrollBar.TEX_HEIGHT, 512f, 256f
             )
-            if (!RecipeCache.isPopulating()) {
-                Scrollbar.currentScroll = 0.0
-            }
         }
         GlStateManager.disableLighting()
         GlStateManager.disableDepth()

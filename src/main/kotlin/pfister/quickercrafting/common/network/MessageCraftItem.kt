@@ -12,7 +12,7 @@ import pfister.quickercrafting.LOG
 import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.crafting.CraftHandler
 import pfister.quickercrafting.common.gui.ContainerQuickerCrafting
-import pfister.quickercrafting.common.util.craftingTableInRange
+import pfister.quickercrafting.common.util.canQuickCraft3x3
 
 class MessageCraftItem(var Recipe: IRecipe?, var Shift: Boolean = false) : IMessage {
     @Suppress("unused")
@@ -51,7 +51,7 @@ class MessageCraftItemHandler : IMessageHandler<MessageCraftItem, MessageSyncCon
         }
         val container = player.openContainer as ContainerQuickerCrafting
 
-        if (!player.craftingTableInRange() && !message.Recipe!!.canFit(2, 2)) {
+        if (!player.canQuickCraft3x3() && !message.Recipe!!.canFit(2, 2)) {
             LOG.warn("MessageCraftItemHandler: Player tried to craft an item outside range on crafting table on server. Attempting config resync...")
             return ConfigValues.generateSyncPacket()
         }

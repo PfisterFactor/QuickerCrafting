@@ -6,7 +6,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext
 import pfister.quickercrafting.LOG
-import pfister.quickercrafting.common.crafting.RecipeCache
+import pfister.quickercrafting.common.crafting.InventoryChangeManager
 
 class MessageRefreshCache : IMessage {
     override fun fromBytes(buf: ByteBuf?) {
@@ -21,7 +21,7 @@ class MessageRefreshCache : IMessage {
 class MessageRefreshCacheHandler : IMessageHandler<MessageRefreshCache, IMessage> {
     override fun onMessage(message: MessageRefreshCache?, ctx: MessageContext?): IMessage? {
         Minecraft.getMinecraft().player.closeScreen()
-        RecipeCache.updateCache(true)
+        InventoryChangeManager.computeChanges(true)
         LOG.info("MessageRefreshCacheHandler: Refreshed client's recipe cache.")
         return null
     }

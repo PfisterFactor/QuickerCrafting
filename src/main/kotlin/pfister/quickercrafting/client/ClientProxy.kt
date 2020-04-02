@@ -27,9 +27,10 @@ import pfister.quickercrafting.client.gui.GuiButtonImageBiggerTexture
 import pfister.quickercrafting.client.gui.GuiQuickerCrafting
 import pfister.quickercrafting.common.CommonProxy
 import pfister.quickercrafting.common.ConfigValues
-import pfister.quickercrafting.common.crafting.RecipeCache
+import pfister.quickercrafting.common.crafting.InventoryChangeManager
 import pfister.quickercrafting.common.network.MessageOpenGUI
 import pfister.quickercrafting.common.network.PacketHandler
+import pfister.quickercrafting.common.util.canQuickCraft3x3
 import kotlin.system.measureTimeMillis
 
 class ClientProxy : CommonProxy() {
@@ -41,12 +42,8 @@ class ClientProxy : CommonProxy() {
     }
 
     override fun loadComplete(event: FMLLoadCompleteEvent) {
-        // Evaluate the lazy variables, thus calculating the item set and recipe graph
-        val ms1 = measureTimeMillis { RecipeCache.ItemsUsedInRecipes }
-        LOG.info("Building ingredient set took ${ms1}ms.")
-        val ms2 = measureTimeMillis { RecipeCache.RecipeGraph }
+        val ms2 = measureTimeMillis { RecipeWorker.buildRecipeGraph() }
         LOG.info("Building recipe graph took ${ms2}ms.")
-
     }
 
 }
@@ -82,21 +79,17 @@ object ClientEventListener {
     // Only happens once per 20 ticks (usually every second)
     fun onPlayerTick(event: TickEvent.PlayerTickEvent) {
         if (event.side != Side.CLIENT || event.phase != TickEvent.Phase.START) return
+        RecipeWorker.startRecipeDaemon()
         tickCounter += 1
         if (tickCounter < ConfigValues.RecipeCheckFrequency) return
         tickCounter = 0
         val player = Minecraft.getMinecraft().player
         // Let the container handle the recipe cache updating if its open, otherwise the recipecache falls out of sync
-        if (Minecraft.getMinecraft().currentScreen !is GuiQuickerCrafting) {
-            if (RecipeCache.isPopulating()) {
-                // Try again next tick
-                tickCounter = ConfigValues.RecipeCheckFrequency
-            } else {
-                RecipeCache.updateCache(false) { ended, _ ->
-                    if (!ended) return@updateCache
-                    ClientContainerQuickerCrafting.displayedRecipes = RecipeCache.CraftableRecipes
-                }
-            }
+        val screen = Minecraft.getMinecraft().currentScreen as? GuiQuickerCrafting
+        if (screen == null) {
+            InventoryChangeManager.computeChanges(false)
+        } else {
+            (screen.inventorySlots as ClientContainerQuickerCrafting).CanCraft3x3 = player.canQuickCraft3x3()
         }
 
 

@@ -1,5 +1,6 @@
 package pfister.quickercrafting.common.util
 
+import net.minecraft.client.util.RecipeItemHelper
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
@@ -63,7 +64,7 @@ fun IInventory.condensedAdd(itemStackToAdd: ItemStack): ItemStack {
 
 private var cachedTablePos: BlockPos? = null
 private var cachedTableItemIndex: Int = -1
-fun EntityPlayer.craftingTableInRange(): Boolean {
+fun EntityPlayer.canQuickCraft3x3(): Boolean {
     // Todo: Make this more efficient
     if (ConfigValues.CraftingTableRadius == 0) return false
     if (ConfigValues.CraftingTableRadius < 0) return true
@@ -126,3 +127,20 @@ fun <E> List<E>.without(vararg indexes: Int): List<E> {
         }
     }
 }
+
+fun RecipeItemHelper.accountSet(stack: ItemStack, count: Int = -1) {
+    val packed = RecipeItemHelper.pack(stack)
+    val c: Int = if (count == -1) stack.count else count
+    if (count <= 0) {
+        this.itemToCount.remove(packed)
+    }
+    this.itemToCount[packed] = c
+}
+
+fun RecipeItemHelper.setPacked(stack: Int, count: Int = -1) {
+    if (count <= 0) {
+        this.itemToCount.remove(stack)
+    }
+    this.itemToCount[stack] = count
+}
+
