@@ -22,6 +22,7 @@ import org.lwjgl.input.Mouse
 import pfister.quickercrafting.LOG
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.QuickerCrafting
+import pfister.quickercrafting.client.crafting.RecipeWorker
 import pfister.quickercrafting.client.gui.ClientContainerQuickerCrafting
 import pfister.quickercrafting.client.gui.GuiButtonImageBiggerTexture
 import pfister.quickercrafting.client.gui.GuiQuickerCrafting

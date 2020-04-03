@@ -1,4 +1,4 @@
-package pfister.quickercrafting.client
+package pfister.quickercrafting.client.crafting
 
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import net.minecraft.client.util.RecipeItemHelper
 import net.minecraft.item.ItemStack
 import net.minecraft.item.crafting.IRecipe
+import pfister.quickercrafting.client.gui.DisplayedRecipeFilter
 import pfister.quickercrafting.common.crafting.RecipeGraph
 import pfister.quickercrafting.common.util.accountSet
 import pfister.quickercrafting.common.util.setPacked
@@ -36,8 +37,10 @@ object RecipeWorker {
                 recipes.forEach { recipe ->
                     if (recipeItemHelper.canCraft(recipe, null)) {
                         CraftableRecipes.add(recipe)
+                        DisplayedRecipeFilter.CHANGED_RECIPE_CHANNEL.send(recipe to true)
                     } else {
                         CraftableRecipes.remove(recipe)
+                        DisplayedRecipeFilter.CHANGED_RECIPE_CHANNEL.send(recipe to false)
                     }
                 }
             }
@@ -51,7 +54,7 @@ object RecipeWorker {
     }
 
     fun buildRecipeGraph() {
-        if (!::recipeGraph.isInitialized) recipeGraph = RecipeGraph()
+        if (!RecipeWorker::recipeGraph.isInitialized) recipeGraph = RecipeGraph()
     }
 
     suspend fun sendItemStack(stack: ItemStack) {

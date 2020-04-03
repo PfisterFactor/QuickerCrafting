@@ -33,7 +33,7 @@ import pfister.quickercrafting.LOG
 import pfister.quickercrafting.MOD_ID
 import pfister.quickercrafting.QuickerCrafting
 import pfister.quickercrafting.client.ClientEventListener
-import pfister.quickercrafting.client.RecipeWorker
+import pfister.quickercrafting.client.crafting.RecipeWorker
 import pfister.quickercrafting.common.ConfigValues
 import pfister.quickercrafting.common.crafting.CraftHandler
 import pfister.quickercrafting.common.crafting.InventoryChangeManager

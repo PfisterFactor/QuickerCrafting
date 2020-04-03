@@ -20,7 +20,7 @@ const val VERSION = "0.9.2"
 lateinit var LOG: Logger
 
 
-@Mod(modid = MOD_ID, name = MOD_NAME, version = VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "after:inventorytweaks;after:mousetweaks;after:baubles;required-after:forgelin@[1.8.3,)")
+@Mod(modid = MOD_ID, name = MOD_NAME, version = VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "after:inventorytweaks;after:mousetweaks;after:baubles;required-after:forgelin@[1.8.4,)")
 object QuickerCrafting {
     @SidedProxy(
             clientSide = "pfister.quickercrafting.client.ClientProxy",
