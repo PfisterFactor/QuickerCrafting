@@ -179,8 +179,11 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
     private lateinit var Searchfield: GuiTextField
     private lateinit var Scrollbar: GuiScrollBar
     private lateinit var ChangeMenuButton: GuiButtonImageBiggerTexture
+
     // If the mouse was down the last frame
     private var wasClicking = false
+
+    private val craftSound = PositionedSoundRecord.getMasterRecord(SoundEvents.BLOCK_ANVIL_USE, 1.0f)
 
     var hoveredCraftingInfo: RecipeCalculator.CraftingPath? = null
 
@@ -243,7 +246,9 @@ class GuiQuickerCrafting(playerInv: InventoryPlayer) : InventoryEffectRenderer(C
             super.handleMouseClick(slotIn, slotId, mouseButton, type)
         else if (hoveredCraftingInfo != null && mouseButton == 0 && type != ClickType.THROW && Minecraft.getMinecraft().player.inventory.itemStack.isEmpty && hoveredCraftingInfo?.CraftingInfos?.isNotEmpty() == true) {
             if (CraftHandler.tryCraftRecipe(this.inventorySlots as ContainerQuickerCrafting, hoveredCraftingInfo?.CraftingInfos?.first()?.Recipe!!, type == ClickType.QUICK_MOVE)) {
-                if (ConfigValues.PlayCraftSound) Minecraft.getMinecraft().soundHandler.playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.BLOCK_ANVIL_USE, 1.0f))
+                if (ConfigValues.PlayCraftSound && !Minecraft.getMinecraft().soundHandler.isSoundPlaying(craftSound)) {
+                    Minecraft.getMinecraft().soundHandler.playSound(craftSound)
+                }
                 PacketHandler.INSTANCE.sendToServer(MessageCraftItem(hoveredCraftingInfo?.CraftingInfos?.first()?.Recipe!!, type == ClickType.QUICK_MOVE))
             }
 
