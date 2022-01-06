@@ -19,12 +19,22 @@ Note: This only changes player crafting, it does not change any autocrafting mac
 ## Todo
 - GUI Improvements (resizability, etc.) 
 - Multi-stage crafting (i.e. you can craft stairs directly from logs by logs->planks->stairs)
-- More mod integration and support (Chisel, more JEI support, mods that change the inventory, etc.)
+- More mod integration and support (Chisel, more JEI support, mods that change/add their own inventory GUI, etc.)
 
 ## Pictures/Videos
 ![Interface](https://i.imgur.com/nx09yQf.png)
 
-[The Menu and Quick Crafting](https://i.imgur.com/Ok8Gsb9.mp4)
+The Menu and Quicker Crafting (older build)
 
-[Search features and Scrolling](https://i.imgur.com/Ro8PZsb.mp4) <- Note this is before I implemented JEI's suffixtree implementation
+
+https://user-images.githubusercontent.com/9849849/148466380-abdf20ec-5722-4523-b89f-bba586c1ce09.mp4
+
+
+Search Features and Scrolling
+
+
+
+https://user-images.githubusercontent.com/9849849/148466574-9e37072d-7920-4c01-bf1a-60453e1bc33f.mp4
+
+
 
